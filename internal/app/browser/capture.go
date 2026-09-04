@@ -1,0 +1,241 @@
+package browser
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/url"
+	"strings"
+	"sync"
+	"time"
+
+	app "github.com/ach968/x-twt-cli/internal/app"
+	"github.com/go-rod/rod/lib/proto"
+)
+
+type ContractCaptureStep struct {
+	URL     string
+	WaitFor []app.OperationName
+}
+
+type ContractCaptureOptions struct {
+	ProfilePath string
+	Headless    bool
+	URLs        []string
+	Steps       []ContractCaptureStep
+	CaptureHost string
+	Timeout     time.Duration
+}
+
+func recordParameter(parsed *url.URL, name string) (map[string]any, error) {
+	value := parsed.Query().Get(name)
+	if value == "" {
+		return map[string]any{}, nil
+	}
+	var result map[string]any
+	if err := json.Unmarshal([]byte(value), &result); err != nil || result == nil {
+		return nil, fmt.Errorf("%s must be a JSON object", name)
+	}
+	return result, nil
+}
+
+func recordObject(value map[string]any, name string) (map[string]any, error) {
+	child, present := value[name]
+	if !present {
+		return map[string]any{}, nil
+	}
+	result, ok := child.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("%s must be a JSON object", name)
+	}
+	return result, nil
+}
+
+type capturedOperationResult struct {
+	Name          app.OperationName
+	Contract      app.OperationContract
+	Authorization string
+}
+
+func captureOperation(request *proto.NetworkRequest) (*capturedOperationResult, error) {
+	parsed, err := url.Parse(request.URL)
+	if err != nil {
+		return nil, err
+	}
+	parts := strings.Split(strings.Trim(parsed.Path, "/"), "/")
+	if len(parts) != 5 || parts[0] != "i" || parts[1] != "api" || parts[2] != "graphql" {
+		return nil, nil
+	}
+	name := app.OperationName(parts[4])
+	if name != app.HomeTimeline && name != app.SearchTimeline {
+		return nil, nil
+	}
+	if request.Method != "GET" && request.Method != "POST" {
+		return nil, nil
+	}
+	var body map[string]any
+	var variables, features, fieldToggles map[string]any
+	encoding := "query"
+	if request.Method == "POST" {
+		encoding = "json"
+		if request.PostData == "" {
+			return nil, errors.New("GraphQL JSON POST has no captured body")
+		}
+		if err := json.Unmarshal([]byte(request.PostData), &body); err != nil || body == nil {
+			return nil, errors.New("GraphQL POST body must be a JSON object")
+		}
+		variables, err = recordObject(body, "variables")
+		if err != nil {
+			return nil, err
+		}
+		features, err = recordObject(body, "features")
+		if err != nil {
+			return nil, err
+		}
+		fieldToggles, err = recordObject(body, "fieldToggles")
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		variables, err = recordParameter(parsed, "variables")
+		if err != nil {
+			return nil, err
+		}
+		features, err = recordParameter(parsed, "features")
+		if err != nil {
+			return nil, err
+		}
+		fieldToggles, err = recordParameter(parsed, "fieldToggles")
+		if err != nil {
+			return nil, err
+		}
+	}
+	authorization, _ := networkHeader(request.Headers, "authorization")
+	return &capturedOperationResult{Name: name, Contract: app.OperationContract{
+		Family: "graphql", Host: parsed.Hostname(), Path: parsed.Path, Method: request.Method, Encoding: encoding,
+		Body: body, Variables: variables, Features: features, FieldToggles: fieldToggles,
+	}, Authorization: authorization}, nil
+}
+
+func CaptureOperationContracts(options ContractCaptureOptions) (result app.CapturedState, err error) {
+	if options.Timeout == 0 {
+		options.Timeout = 10 * time.Second
+	}
+	client, err := newBrowserClient(options.ProfilePath, options.Headless, options.Timeout)
+	if err != nil {
+		return result, err
+	}
+	defer func() {
+		if closeErr := client.Close(); err == nil {
+			err = closeErr
+		}
+	}()
+	page := client.page
+	var mutex sync.Mutex
+	operations := map[app.OperationName]app.OperationContract{}
+	authorization := ""
+	var captureErr error
+	notify := make(chan struct{}, 1)
+	waitEvents := page.EachEvent(func(event *proto.NetworkRequestWillBeSent) {
+		parsed, parseErr := url.Parse(event.Request.URL)
+		allowed := parseErr == nil && (parsed.Hostname() == "x.com" || strings.HasSuffix(parsed.Hostname(), ".x.com"))
+		if options.CaptureHost != "" {
+			allowed = parseErr == nil && parsed.Hostname() == options.CaptureHost
+		}
+		if !allowed {
+			return
+		}
+		captured, eventErr := captureOperation(event.Request)
+		mutex.Lock()
+		defer mutex.Unlock()
+		if eventErr != nil && captureErr == nil {
+			captureErr = eventErr
+		}
+		if captured != nil {
+			operations[captured.Name] = captured.Contract
+			if authorization == "" {
+				authorization = captured.Authorization
+			}
+		}
+		select {
+		case notify <- struct{}{}:
+		default:
+		}
+	})
+	go waitEvents()
+	waitForOperations := func(names []app.OperationName) error {
+		timer := time.NewTimer(options.Timeout)
+		defer timer.Stop()
+		for {
+			mutex.Lock()
+			ready := true
+			for _, name := range names {
+				if _, ok := operations[name]; !ok {
+					ready = false
+					break
+				}
+			}
+			currentErr := captureErr
+			mutex.Unlock()
+			if currentErr != nil {
+				return currentErr
+			}
+			if ready {
+				return nil
+			}
+			select {
+			case <-notify:
+			case <-timer.C:
+				values := make([]string, len(names))
+				for i, name := range names {
+					values[i] = string(name)
+				}
+				return fmt.Errorf("Timed out waiting for operation contracts: %s", strings.Join(values, ", "))
+			}
+		}
+	}
+	steps := options.Steps
+	if len(steps) == 0 {
+		for index, value := range options.URLs {
+			waitFor := []app.OperationName{}
+			if index == len(options.URLs)-1 {
+				waitFor = []app.OperationName{app.HomeTimeline, app.SearchTimeline}
+			}
+			steps = append(steps, ContractCaptureStep{URL: value, WaitFor: waitFor})
+		}
+	}
+	if len(steps) == 0 {
+		return result, errors.New("At least one capture URL or step is required")
+	}
+	for _, step := range steps {
+		if err = page.Navigate(step.URL); err != nil {
+			return result, err
+		}
+		if err = page.WaitLoad(); err != nil {
+			return result, err
+		}
+		if err = waitForOperations(step.WaitFor); err != nil {
+			return result, err
+		}
+	}
+	if err = waitForOperations([]app.OperationName{app.HomeTimeline, app.SearchTimeline}); err != nil {
+		return result, err
+	}
+	mutex.Lock()
+	defer mutex.Unlock()
+	if authorization == "" {
+		return result, errors.New("Required operation contracts or authentication were not captured")
+	}
+	cookies, err := client.launched.browser.GetCookies()
+	if err != nil {
+		return result, err
+	}
+	authCookies := make([]app.AuthenticationCookie, len(cookies))
+	for i, cookie := range cookies {
+		authCookies[i] = app.AuthenticationCookie{Name: cookie.Name, Value: cookie.Value}
+	}
+	return app.CapturedState{
+		Contracts:      app.ContractProperties{Version: 1, Operations: map[app.OperationName]app.OperationContract{app.HomeTimeline: operations[app.HomeTimeline], app.SearchTimeline: operations[app.SearchTimeline]}},
+		Authentication: app.AuthenticationState{Cookies: authCookies, Authorization: authorization},
+	}, nil
+}

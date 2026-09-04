@@ -1,0 +1,11 @@
+{
+  "name": "x-twt-transaction-id-probe",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "trans": "bun run transaction-id-probe.ts"
+  },
+  "dependencies": {
+    "x-client-transaction-id": "0.3.1"
+  }
+}

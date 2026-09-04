@@ -1,0 +1,96 @@
+package contracts
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"strings"
+
+	app "github.com/ach968/x-twt-cli/internal/app"
+)
+
+var requiredOperations = []app.OperationName{app.HomeTimeline, app.SearchTimeline}
+
+type ContractPropertiesError struct {
+	Code    string
+	Message string
+}
+
+func (e *ContractPropertiesError) Error() string { return e.Message }
+
+func newContractPropertiesError(message string, code ...string) error {
+	value := "INVALID_CONTRACT_PROPERTIES"
+	if len(code) > 0 {
+		value = code[0]
+	}
+	return &ContractPropertiesError{Code: value, Message: message}
+}
+
+func isXOwnedHost(host string) bool {
+	return host == "x.com" || strings.HasSuffix(host, ".x.com")
+}
+
+func validateOperation(operation app.OperationContract) bool {
+	validMethod := operation.Method == "GET" || operation.Method == "POST"
+	validEncoding := (operation.Method == "GET" && operation.Encoding == "query") ||
+		(operation.Method == "POST" && operation.Encoding == "json" && operation.Body != nil)
+	return operation.Family == "graphql" &&
+		isXOwnedHost(operation.Host) &&
+		strings.HasPrefix(operation.Path, "/") &&
+		validMethod && validEncoding &&
+		operation.Variables != nil && operation.Features != nil && operation.FieldToggles != nil
+}
+
+func Load(path string) (app.ContractProperties, error) {
+	contents, err := os.ReadFile(path)
+	if err != nil {
+		return app.ContractProperties{}, newContractPropertiesError(
+			fmt.Sprintf("Unable to read contract properties from %s", path),
+			"CONTRACT_PROPERTIES_UNREADABLE",
+		)
+	}
+
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(contents, &raw); err != nil || raw == nil {
+		return app.ContractProperties{}, newContractPropertiesError("Contract properties are not valid JSON")
+	}
+
+	var version int
+	if err := json.Unmarshal(raw["version"], &version); err != nil || version != 1 {
+		return app.ContractProperties{}, newContractPropertiesError(
+			"Unsupported contract properties version",
+			"UNSUPPORTED_CONTRACT_VERSION",
+		)
+	}
+
+	var operationRaw map[string]json.RawMessage
+	if err := json.Unmarshal(raw["operations"], &operationRaw); err != nil || operationRaw == nil {
+		return app.ContractProperties{}, newContractPropertiesError("Operations must be an object")
+	}
+	if len(operationRaw) != len(requiredOperations) {
+		return app.ContractProperties{}, newContractPropertiesError("Contract properties must contain exactly the required valid operations")
+	}
+
+	properties := app.ContractProperties{Version: version, Operations: make(map[app.OperationName]app.OperationContract, len(operationRaw))}
+	for _, name := range requiredOperations {
+		encoded, ok := operationRaw[string(name)]
+		if !ok {
+			return app.ContractProperties{}, newContractPropertiesError("Contract properties must contain exactly the required valid operations")
+		}
+		var operation app.OperationContract
+		if err := json.Unmarshal(encoded, &operation); err != nil || !validateOperation(operation) {
+			return app.ContractProperties{}, newContractPropertiesError("Contract properties must contain exactly the required valid operations")
+		}
+		properties.Operations[name] = operation
+	}
+	return properties, nil
+}
+
+func ErrorCode(err error) string {
+	var target *ContractPropertiesError
+	if errors.As(err, &target) {
+		return target.Code
+	}
+	return ""
+}
