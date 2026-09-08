@@ -1,4 +1,4 @@
-package cli_test
+package search_test
 
 import (
 	"encoding/json"
@@ -9,8 +9,8 @@ import (
 	app "github.com/ach968/x-twt-cli/internal/app"
 )
 
-func TestSearchMediaWritesNormalizedMediaPage(t *testing.T) {
-	contents, err := os.ReadFile(filepath.Join("..", "search", "testdata", "media-source.json"))
+func TestWritesNormalizedMediaPage(t *testing.T) {
+	contents, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "search", "testdata", "media-source.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -20,7 +20,7 @@ func TestSearchMediaWritesNormalizedMediaPage(t *testing.T) {
 	}
 
 	requester := &controlledRequester{result: app.OperationResult{OK: true, Payload: payload}}
-	status, stdout, stderr := run(t, requester, "search", "cats", "--tab", "media")
+	status, stdout, stderr := run(t, requester, "cats", "--tab", "media")
 	if status != 0 || stderr != "" {
 		t.Fatalf("status=%d stderr=%q", status, stderr)
 	}

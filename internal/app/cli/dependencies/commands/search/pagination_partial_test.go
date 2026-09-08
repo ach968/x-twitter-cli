@@ -1,4 +1,4 @@
-package cli_test
+package search_test
 
 import (
 	"encoding/json"
@@ -9,11 +9,11 @@ import (
 	app "github.com/ach968/x-twt-cli/internal/app"
 )
 
-func TestSearchListsReturnsUsablePartialPage(t *testing.T) {
+func TestListsReturnsUsablePartialPage(t *testing.T) {
 	payload := readPaginationPayload(t, "pagination-partial-source.json")
 	requester := &controlledRequester{result: app.OperationResult{OK: true, Payload: payload}}
 
-	status, stdout, stderr := run(t, requester, "search", "mixed", "--tab", "LiStS", "--cursor", "opaque-cursor")
+	status, stdout, stderr := run(t, requester, "mixed", "--tab", "LiStS", "--cursor", "opaque-cursor")
 	if status != 0 || stderr != "" {
 		t.Fatalf("status=%d stderr=%q", status, stderr)
 	}
@@ -39,9 +39,9 @@ func TestSearchListsReturnsUsablePartialPage(t *testing.T) {
 	}
 }
 
-func TestSearchRejectsUnsupportedResultOnlyPage(t *testing.T) {
+func TestRejectsUnsupportedResultOnlyPage(t *testing.T) {
 	payload := readPaginationPayload(t, "pagination-unknown-only-source.json")
-	status, stdout, stderr := run(t, &controlledRequester{result: app.OperationResult{OK: true, Payload: payload}}, "search", "unknown")
+	status, stdout, stderr := run(t, &controlledRequester{result: app.OperationResult{OK: true, Payload: payload}}, "unknown")
 	if status == 0 || stdout != "" || stderr != "{\"code\":\"RESPONSE_SHAPE_CHANGED\",\"message\":\"X returned an unrecognized SearchTimeline response\"}\n" {
 		t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
 	}
@@ -49,7 +49,7 @@ func TestSearchRejectsUnsupportedResultOnlyPage(t *testing.T) {
 
 func readPaginationPayload(t *testing.T, name string) any {
 	t.Helper()
-	contents, err := os.ReadFile(filepath.Join("..", "search", "testdata", name))
+	contents, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "search", "testdata", name))
 	if err != nil {
 		t.Fatal(err)
 	}

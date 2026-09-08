@@ -1,4 +1,4 @@
-package cli_test
+package search_test
 
 import (
 	"encoding/json"
@@ -9,8 +9,8 @@ import (
 	app "github.com/ach968/x-twt-cli/internal/app"
 )
 
-func TestSearchPeopleRendersNormalizedUsers(t *testing.T) {
-	contents, err := os.ReadFile(filepath.Join("..", "..", "..", "test", "testdata", "search-timeline", "people-results.json"))
+func TestRendersNormalizedUsers(t *testing.T) {
+	contents, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "test", "testdata", "search-timeline", "people-results.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -20,7 +20,7 @@ func TestSearchPeopleRendersNormalizedUsers(t *testing.T) {
 	}
 
 	requester := &controlledRequester{result: app.OperationResult{OK: true, Payload: source}}
-	status, stdout, stderr := run(t, requester, "search", "example people", "--tab", "people")
+	status, stdout, stderr := run(t, requester, "example people", "--tab", "people")
 	if status != 0 || stderr != "" {
 		t.Fatalf("status=%d stderr=%q", status, stderr)
 	}

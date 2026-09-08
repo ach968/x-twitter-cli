@@ -1,4 +1,4 @@
-package cli_test
+package search_test
 
 import (
 	"encoding/json"
@@ -9,8 +9,8 @@ import (
 	app "github.com/ach968/x-twt-cli/internal/app"
 )
 
-func TestSearchWritesQuotedPostAndCommunityNote(t *testing.T) {
-	contents, err := os.ReadFile(filepath.Join("..", "search", "testdata", "quotes-notes-source.json"))
+func TestWritesQuotedPostAndCommunityNote(t *testing.T) {
+	contents, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "search", "testdata", "quotes-notes-source.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -19,7 +19,7 @@ func TestSearchWritesQuotedPostAndCommunityNote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	status, stdout, stderr := run(t, &controlledRequester{result: app.OperationResult{OK: true, Payload: payload}}, "search", "context")
+	status, stdout, stderr := run(t, &controlledRequester{result: app.OperationResult{OK: true, Payload: payload}}, "context")
 	if status != 0 || stderr != "" {
 		t.Fatalf("status=%d stderr=%q", status, stderr)
 	}
