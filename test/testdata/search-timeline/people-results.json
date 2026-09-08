@@ -1,0 +1,86 @@
+{
+  "data": {
+    "search_by_raw_query": {
+      "search_timeline": {
+        "timeline": {
+          "instructions": [
+            {
+              "type": "TimelineAddEntries",
+              "entries": [
+                {
+                  "entryId": "user-100",
+                  "content": {
+                    "entryType": "TimelineTimelineItem",
+                    "itemContent": {
+                      "itemType": "TimelineUser",
+                      "user_results": {
+                        "result": {
+                          "__typename": "User",
+                          "rest_id": "100",
+                          "core": {"name": "Example Person", "screen_name": "example"},
+                          "avatar": {"image_url": "https://example.test/avatar.jpg"},
+                          "banner": {"image_url": "https://example.test/banner.jpg"},
+                          "profile_bio": {"description": "Example biography", "entities": {"url": {"urls": [{"url": "https://t.co/site", "expanded_url": "https://example.test/"}]}}},
+                          "website": {"url": "https://t.co/site"},
+                          "privacy": {"protected": false},
+                          "is_blue_verified": true,
+                          "verification": {"verified": false, "verified_type": "Business"},
+                          "affiliates_highlighted_label": {"label": {"userLabelType": "BusinessLabel", "description": "Example Organization", "url": {"url": "https://twitter.com/example_org"}, "badge": {"url": "https://example.test/badge.png"}}},
+                          "professional": {"professional_type": "Business", "category": [{"name": "Science & Technology"}, {"name": "Software Company"}]},
+                          "relationship_counts": {"followers": 0, "following": 12},
+                          "tweet_counts": {"tweets": 34, "media_tweets": 0},
+                          "action_counts": {"favorites_count": 999}
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "entryId": "user-101",
+                  "content": {
+                    "entryType": "TimelineTimelineItem",
+                    "itemContent": {
+                      "itemType": "TimelineUser",
+                      "user_results": {
+                        "result": {
+                          "__typename": "User",
+                          "rest_id": "101",
+                          "core": {"name": "Automated Account", "screen_name": "automation"},
+                          "avatar": {"image_url": "https://example.test/automation.jpg"},
+                          "privacy": {"protected": true},
+                          "affiliates_highlighted_label": {"label": {"userLabelType": "AutomatedLabel", "longDescription": {"entities": [{"ref": {"mention_results": {"result": {"rest_id": "200", "core": {"screen_name": "operator"}}}}}]}}},
+                          "relationship_counts": {"followers": 1, "following": 2},
+                          "tweet_counts": {"tweets": 3, "media_tweets": 4}
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "entryId": "user-102",
+                  "content": {
+                    "entryType": "TimelineTimelineItem",
+                    "itemContent": {
+                      "itemType": "TimelineUser",
+                      "user_results": {
+                        "result": {
+                          "__typename": "User",
+                          "rest_id": "102",
+                          "core": {"name": "Partial Account", "screen_name": "partial"},
+                          "banner": {"image_url": ""},
+                          "website": {"url": ""},
+                          "privacy": {"protected": false},
+                          "verification": {"verified": false, "verified_type": "Business"}
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

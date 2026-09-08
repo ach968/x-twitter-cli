@@ -1,0 +1,38 @@
+[
+  {
+    "type": "list",
+    "id": "95292832",
+    "name": "Gophers",
+    "description": "Golang enthusiasts",
+    "url": "https://x.com/i/lists/95292832",
+    "owner": {
+      "id": "200500313",
+      "name": "Example Owner",
+      "username": "example_owner",
+      "url": "https://x.com/example_owner",
+      "avatar_url": "https://pbs.twimg.com/profile_images/example.jpg",
+      "verification": null,
+      "protected": false
+    },
+    "private": false,
+    "banner_url": "https://pbs.twimg.com/media/gophers-banner.png",
+    "metrics": {
+      "members": 0,
+      "subscribers": 89
+    }
+  },
+  {
+    "type": "list",
+    "id": "44",
+    "name": "Sparse list",
+    "description": null,
+    "url": "https://x.com/i/lists/44",
+    "owner": null,
+    "private": null,
+    "banner_url": null,
+    "metrics": {
+      "members": null,
+      "subscribers": null
+    }
+  }
+]

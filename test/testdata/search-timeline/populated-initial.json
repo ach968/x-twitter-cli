@@ -1,0 +1,245 @@
+{
+  "data": {
+    "search_by_raw_query": {
+      "search_timeline": {
+        "timeline": {
+          "instructions": [
+            {
+              "type": "TimelineAddEntries",
+              "entries": [
+                {
+                  "entryId": "tweet-100",
+                  "sortIndex": "100",
+                  "content": {
+                    "__typename": "TimelineTimelineItem",
+                    "entryType": "TimelineTimelineItem",
+                    "itemContent": {
+                      "__typename": "TimelineTweet",
+                      "itemType": "TimelineTweet",
+                      "tweetDisplayType": "Tweet",
+                      "tweet_results": {
+                        "result": {
+                          "__typename": "Tweet",
+                          "rest_id": "100",
+                          "core": {
+                            "user_results": {
+                              "result": {
+                                "__typename": "User",
+                                "rest_id": "10",
+                                "core": {
+                                  "created_at": "Thu Jan 01 00:00:00 +0000 1970",
+                                  "name": "Example User",
+                                  "screen_name": "example"
+                                },
+                                "avatar": {
+                                  "image_url": "https://example.com/avatar.jpg"
+                                },
+                                "privacy": {
+                                  "protected": false
+                                },
+                                "verification": {
+                                  "verified": false,
+                                  "verified_type": null
+                                },
+                                "relationship_counts": {
+                                  "followers": 10,
+                                  "following": 5
+                                },
+                                "tweet_counts": {
+                                  "media_tweets": 2,
+                                  "tweets": 20
+                                }
+                              }
+                            }
+                          },
+                          "legacy": {
+                            "created_at": "Thu Jan 01 00:00:00 +0000 1970",
+                            "full_text": "Example post with a photo",
+                            "display_text_range": [0, 25],
+                            "entities": {
+                              "hashtags": [],
+                              "symbols": [],
+                              "urls": [],
+                              "user_mentions": []
+                            },
+                            "extended_entities": {
+                              "media": [
+                                {
+                                  "type": "photo",
+                                  "media_url_https": "https://example.com/photo.jpg",
+                                  "url": "https://t.co/example",
+                                  "display_url": "pic.x.com/example",
+                                  "expanded_url": "https://x.com/example/status/100/photo/1"
+                                }
+                              ]
+                            },
+                            "favorite_count": 1,
+                            "quote_count": 0,
+                            "reply_count": 0,
+                            "retweet_count": 0,
+                            "conversation_id_str": "100",
+                            "id_str": "100",
+                            "user_id_str": "10"
+                          },
+                          "views": {
+                            "count": "12",
+                            "state": "EnabledWithCount"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "entryId": "tweet-101",
+                  "sortIndex": "99",
+                  "content": {
+                    "__typename": "TimelineTimelineItem",
+                    "entryType": "TimelineTimelineItem",
+                    "itemContent": {
+                      "__typename": "TimelineTweet",
+                      "itemType": "TimelineTweet",
+                      "tweetDisplayType": "Tweet",
+                      "tweet_results": {
+                        "result": {
+                          "__typename": "Tweet",
+                          "rest_id": "101",
+                          "core": {
+                            "user_results": {
+                              "result": {
+                                "__typename": "User",
+                                "rest_id": "11",
+                                "core": {
+                                  "created_at": "Thu Jan 01 00:00:00 +0000 1970",
+                                  "name": "Long Form User",
+                                  "screen_name": "longform"
+                                },
+                                "avatar": {
+                                  "image_url": "https://example.com/longform-avatar.jpg"
+                                },
+                                "privacy": {
+                                  "protected": false
+                                },
+                                "verification": {
+                                  "verified": true,
+                                  "verified_type": "Blue"
+                                }
+                              }
+                            }
+                          },
+                          "legacy": {
+                            "created_at": "Thu Jan 01 00:00:00 +0000 1970",
+                            "full_text": "Example truncated post",
+                            "display_text_range": [0, 22],
+                            "entities": {
+                              "hashtags": [],
+                              "symbols": [],
+                              "urls": [],
+                              "user_mentions": []
+                            },
+                            "favorite_count": 2,
+                            "quote_count": 0,
+                            "reply_count": 0,
+                            "retweet_count": 0,
+                            "conversation_id_str": "101",
+                            "id_str": "101",
+                            "user_id_str": "11"
+                          },
+                          "note_tweet": {
+                            "note_tweet_results": {
+                              "result": {
+                                "id": "note-101",
+                                "text": "Example complete long-form post",
+                                "entity_set": {
+                                  "hashtags": [],
+                                  "symbols": [],
+                                  "urls": [],
+                                  "user_mentions": []
+                                }
+                              }
+                            }
+                          },
+                          "views": {
+                            "count": "24",
+                            "state": "EnabledWithCount"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "entryId": "prompt-1",
+                  "sortIndex": "98",
+                  "content": {
+                    "__typename": "TimelineTimelineItem",
+                    "entryType": "TimelineTimelineItem",
+                    "itemContent": {
+                      "__typename": "TimelinePrompt",
+                      "itemType": "TimelinePrompt",
+                      "content": {
+                        "header": "Example prompt"
+                      }
+                    }
+                  }
+                },
+                {
+                  "entryId": "module-1",
+                  "sortIndex": "97",
+                  "content": {
+                    "__typename": "TimelineTimelineModule",
+                    "entryType": "TimelineTimelineModule",
+                    "displayType": "Vertical",
+                    "items": [
+                      {
+                        "entryId": "module-tweet-102",
+                        "item": {
+                          "itemContent": {
+                            "__typename": "TimelineTweet",
+                            "itemType": "TimelineTweet",
+                            "tweetDisplayType": "Tweet",
+                            "tweet_results": {
+                              "result": {
+                                "__typename": "Tweet",
+                                "rest_id": "102",
+                                "legacy": {
+                                  "full_text": "Example tweet nested in a module",
+                                  "id_str": "102",
+                                  "user_id_str": "10"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "entryId": "cursor-top-1",
+                  "sortIndex": "101",
+                  "content": {
+                    "__typename": "TimelineTimelineCursor",
+                    "entryType": "TimelineTimelineCursor",
+                    "cursorType": "Top",
+                    "value": "cursor-top-example"
+                  }
+                },
+                {
+                  "entryId": "cursor-bottom-1",
+                  "sortIndex": "1",
+                  "content": {
+                    "__typename": "TimelineTimelineCursor",
+                    "entryType": "TimelineTimelineCursor",
+                    "cursorType": "Bottom",
+                    "value": "cursor-bottom-example"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -4,6 +4,7 @@ package test
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -12,7 +13,9 @@ import (
 	transaction "github.com/ach968/x-client-transaction-id-go"
 	app "github.com/ach968/x-twt-cli/internal/app"
 	"github.com/ach968/x-twt-cli/internal/app/browser"
+	"github.com/ach968/x-twt-cli/internal/app/contracts"
 	"github.com/ach968/x-twt-cli/internal/app/httpclient"
+	"github.com/ach968/x-twt-cli/internal/app/search"
 	"github.com/ach968/x-twt-cli/internal/app/state"
 )
 
@@ -44,6 +47,67 @@ func currentEnvironment() map[string]string {
 		}
 	}
 	return result
+}
+
+func TestCaptureSearchTimelineEvidence(t *testing.T) {
+	if os.Getenv("TWT_CAPTURE_SEARCH_EVIDENCE") != "1" {
+		t.Skip("set TWT_CAPTURE_SEARCH_EVIDENCE=1 to save a SearchTimeline source payload")
+	}
+	query := strings.TrimSpace(os.Getenv("TWT_SEARCH_QUERY"))
+	if query == "" {
+		t.Fatal("TWT_SEARCH_QUERY is required")
+	}
+	product := strings.TrimSpace(os.Getenv("TWT_SEARCH_PRODUCT"))
+	if product == "" {
+		product = "Top"
+	}
+	cursor := os.Getenv("TWT_SEARCH_CURSOR")
+	scenario := strings.TrimSpace(os.Getenv("TWT_SEARCH_SCENARIO"))
+	if scenario == "" {
+		scenario = strings.ToLower(product) + "-initial"
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	paths := state.ResolvePaths(home, currentEnvironment())
+	properties, err := contracts.Load(paths.ActiveContractPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	authentication, err := state.LoadAuthentication(paths.AuthenticationPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	generator, err := transaction.New(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	overrides := map[string]any{"product": product}
+	page := 1
+	if cursor != "" {
+		overrides["cursor"] = cursor
+		page = 2
+	}
+	requestClient := httpclient.New(properties, authentication, httpclient.NewTransport(nil), generator)
+	result, err := requestClient.SearchTimeline(context.Background(), query, overrides)
+	if err != nil || !result.OK {
+		logLiveFailure(t, "SearchTimeline", result, err)
+		t.Fatalf("search failed: %#v %v", result, err)
+	}
+	path, err := saveSearchTimelineEvidence(paths.EvidenceDirectory, time.Now(), searchTimelineSample{
+		Scenario:       scenario,
+		Query:          query,
+		Product:        product,
+		Page:           page,
+		CursorProvided: cursor != "",
+		Payload:        result.Payload,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("saved pending SearchTimeline evidence to %s", path)
 }
 
 func TestLiveAuthenticatedProfileExecutesBothOperations(t *testing.T) {
@@ -117,7 +181,7 @@ func TestLiveAuthenticatedProfileExecutesBothOperations(t *testing.T) {
 			duration time.Duration
 		}
 		home := make(chan outcome, 1)
-		search := make(chan outcome, 1)
+		searchResults := make(chan outcome, 1)
 		go func() {
 			started := time.Now()
 			result, err := requestClient.HomeTimeline(context.Background(), nil)
@@ -126,10 +190,10 @@ func TestLiveAuthenticatedProfileExecutesBothOperations(t *testing.T) {
 		go func() {
 			started := time.Now()
 			result, err := requestClient.SearchTimeline(context.Background(), "x", nil)
-			search <- outcome{result: result, err: err, duration: time.Since(started)}
+			searchResults <- outcome{result: result, err: err, duration: time.Since(started)}
 		}()
 		homeOutcome := <-home
-		searchOutcome := <-search
+		searchOutcome := <-searchResults
 		t.Run("home_timeline_over_direct_http", func(t *testing.T) {
 			// t.Logf("completed in %s", homeOutcome.duration)
 			if homeOutcome.err != nil || !homeOutcome.result.OK {
@@ -142,6 +206,18 @@ func TestLiveAuthenticatedProfileExecutesBothOperations(t *testing.T) {
 			if searchOutcome.err != nil || !searchOutcome.result.OK {
 				logLiveFailure(t, "SearchTimeline", searchOutcome.result, searchOutcome.err)
 				t.Fatalf("search failed: %#v %v", searchOutcome.result, searchOutcome.err)
+			}
+		})
+		t.Run("search_timeline_decodes_without_printing_source", func(t *testing.T) {
+			if searchOutcome.err != nil || !searchOutcome.result.OK {
+				t.Skip("SearchTimeline did not return a successful source payload")
+			}
+			page, err := search.DecodePage(searchOutcome.result.Payload, "x", search.TabTop)
+			if err != nil {
+				t.Fatalf("SearchTimeline payload is incompatible with the decoder: %v", err)
+			}
+			if _, err := json.Marshal(page); err != nil {
+				t.Fatalf("normalized search page cannot be encoded: %v", err)
 			}
 		})
 	})

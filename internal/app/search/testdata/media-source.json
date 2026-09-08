@@ -1,0 +1,62 @@
+{
+  "data": {
+    "search_by_raw_query": {
+      "search_timeline": {
+        "timeline": {
+          "instructions": [
+            {
+              "type": "TimelineAddEntries",
+              "entries": [
+                {
+                  "content": {
+                    "entryType": "TimelineTimelineModule",
+                    "displayType": "VerticalGrid",
+                    "items": [
+                      {
+                        "item": {
+                          "itemContent": {
+                            "itemType": "TimelineTweet",
+                            "tweet_results": {
+                              "result": {
+                                "rest_id": "2095005406548341158",
+                                "core": {"user_results": {"result": {"rest_id": "1", "core": {"name": "Media Author", "screen_name": "media_author"}}}},
+                                "legacy": {
+                                  "created_at": "Mon Sep 01 21:26:00 +0000 2026",
+                                  "full_text": "Mixed media post",
+                                  "extended_entities": {
+                                    "media": [
+                                      {"id_str": "100", "type": "photo", "media_url_https": "https://img.test/photo.jpg", "ext_alt_text": "A photo", "original_info": {"width": 640, "height": 480}},
+                                      {"id_str": "101", "type": "video", "media_url_https": "https://img.test/video.jpg", "original_info": {"width": 1920, "height": 1080}, "video_info": {"duration_millis": 42000, "variants": [{"content_type": "application/x-mpegURL", "url": "https://video.test/stream.m3u8"}, {"bitrate": 256000, "content_type": "video/mp4", "url": "https://video.test/low.mp4"}, {"bitrate": 2048000, "content_type": "video/mp4", "url": "https://video.test/high.mp4"}]}},
+                                      {"id_str": "102", "type": "animated_gif", "media_url_https": "https://img.test/gif.jpg", "video_info": {"variants": [{"content_type": "video/mp4", "url": "https://video.test/gif.mp4"}]}}
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "item": {
+                          "itemContent": {
+                            "itemType": "TimelineTweet",
+                            "tweet_results": {
+                              "result": {
+                                "rest_id": "2",
+                                "legacy": {"full_text": "No media post"}
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

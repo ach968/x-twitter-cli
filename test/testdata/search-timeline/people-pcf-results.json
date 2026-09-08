@@ -1,0 +1,59 @@
+{
+  "data": {
+    "search_by_raw_query": {
+      "search_timeline": {
+        "timeline": {
+          "instructions": [
+            {
+              "type": "TimelineAddEntries",
+              "entries": [
+                {
+                  "content": {
+                    "itemContent": {
+                      "itemType": "TimelineUser",
+                      "user_results": {
+                        "result": {
+                          "rest_id": "301",
+                          "core": {"name": "Parody Example", "screen_name": "parody_example"},
+                          "parody_commentary_fan_label": "Parody"
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "content": {
+                    "itemContent": {
+                      "itemType": "TimelineUser",
+                      "user_results": {
+                        "result": {
+                          "rest_id": "302",
+                          "core": {"name": "Fan Example", "screen_name": "fan_example"},
+                          "parody_commentary_fan_label": "Fan"
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "content": {
+                    "itemContent": {
+                      "itemType": "TimelineUser",
+                      "user_results": {
+                        "result": {
+                          "rest_id": "303",
+                          "core": {"name": "Unsupported Example", "screen_name": "unsupported_example"},
+                          "parody_commentary_fan_label": "Commentary"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

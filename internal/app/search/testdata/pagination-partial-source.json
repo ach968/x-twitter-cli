@@ -1,0 +1,103 @@
+{
+  "data": {
+    "search_by_raw_query": {
+      "search_timeline": {
+        "timeline": {
+          "instructions": [
+            {
+              "type": "TimelineAddEntries",
+              "entries": [
+                {
+                  "entryId": "post-1",
+                  "content": {
+                    "entryType": "TimelineTimelineItem",
+                    "itemContent": {
+                      "itemType": "TimelineTweet",
+                      "tweet_results": {
+                        "result": {
+                          "rest_id": "post-1",
+                          "legacy": {
+                            "id_str": "post-1",
+                            "full_text": "A post",
+                            "conversation_id_str": "post-1",
+                            "entities": {"urls": [], "user_mentions": [], "hashtags": [], "symbols": []}
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "entryId": "user-1",
+                  "content": {
+                    "entryType": "TimelineTimelineItem",
+                    "itemContent": {
+                      "itemType": "TimelineUser",
+                      "user_results": {
+                        "result": {
+                          "rest_id": "user-1",
+                          "core": {"name": "User", "screen_name": "user"}
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "entryId": "lists-1",
+                  "content": {
+                    "entryType": "TimelineTimelineModule",
+                    "displayType": "Vertical",
+                    "items": [
+                      {
+                        "item": {
+                          "itemContent": {
+                            "itemType": "TimelineTwitterList",
+                            "list": {"id_str": "list-1", "name": "A list", "mode": "Public"}
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "entryId": "prompt-1",
+                  "content": {
+                    "entryType": "TimelineTimelineItem",
+                    "itemContent": {"itemType": "TimelinePrompt"}
+                  }
+                },
+                {
+                  "entryId": "unknown-1",
+                  "content": {
+                    "entryType": "TimelineTimelineItem",
+                    "itemContent": {"itemType": "TimelineUnsupportedResult"}
+                  }
+                },
+                {
+                  "entryId": "bottom-old",
+                  "content": {"entryType": "TimelineTimelineCursor", "cursorType": "Bottom", "value": "old-bottom"}
+                }
+              ]
+            },
+      {
+        "type": "TimelineReplaceEntry",
+        "entry_id_to_replace": "top-old",
+        "entry": {
+                "entryId": "top-new",
+                "content": {"entryType": "TimelineTimelineCursor", "cursorType": "Top", "value": "new-top"}
+              }
+            },
+      {
+        "type": "TimelineReplaceEntry",
+        "entry_id_to_replace": "bottom-old",
+        "entry": {
+                "entryId": "bottom-new",
+                "content": {"entryType": "TimelineTimelineCursor", "cursorType": "Bottom", "value": "new-bottom"}
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

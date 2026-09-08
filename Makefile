@@ -4,7 +4,7 @@ CHROMIUM ?= /usr/bin/chromium
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build run test test-race test-browser test-browser-race test-live fmt fmt-check vet check check-browser clean
+.PHONY: help build run test test-race test-browser test-browser-race test-live capture-search-evidence fmt fmt-check vet check check-browser clean
 
 help: ## Show available targets.
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z0-9_-]+:.*## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -29,6 +29,10 @@ test-browser-race: ## Run local Chromium integration tests with the race detecto
 
 test-live: ## Run all opt-in live X tests using the persisted application profile.
 	TWT_LIVE_X=1 TWT_CHROMIUM_EXECUTABLE="$(CHROMIUM)" $(GO) test -tags=live -v -count=1 -timeout=2m ./test
+
+capture-search-evidence: ## Save one SearchTimeline payload (requires query; product defaults to Top).
+	@test -n "$$TWT_SEARCH_QUERY" || (echo "TWT_SEARCH_QUERY is required" >&2; exit 2)
+	TWT_CAPTURE_SEARCH_EVIDENCE=1 $(GO) test -tags=live -v -count=1 -timeout=2m -run '^TestCaptureSearchTimelineEvidence$$' ./test
 
 fmt: ## Format all Go packages.
 	$(GO) fmt ./...

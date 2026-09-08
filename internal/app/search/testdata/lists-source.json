@@ -1,0 +1,68 @@
+{
+  "content": {
+    "__typename": "TimelineTimelineModule",
+    "entryType": "TimelineTimelineModule",
+    "displayType": "Vertical",
+    "items": [
+      {
+        "entryId": "list-95292832",
+        "item": {
+          "itemContent": {
+            "__typename": "TimelineList",
+            "itemType": "TimelineTwitterList",
+            "list": {
+              "__typename": "List",
+              "id_str": "95292832",
+              "name": "Gophers",
+              "description": "Golang enthusiasts",
+              "member_count": 0,
+              "subscriber_count": 89,
+              "mode": "Public",
+              "default_banner_media": {
+                "media_info": {
+                  "original_img_url": "https://pbs.twimg.com/media/gophers-banner.png"
+                }
+              },
+              "user_results": {
+                "result": {
+                  "__typename": "User",
+                  "rest_id": "200500313",
+                  "core": {
+                    "name": "Example Owner",
+                    "screen_name": "example_owner"
+                  },
+                  "avatar": {
+                    "image_url": "https://pbs.twimg.com/profile_images/example.jpg"
+                  },
+                  "privacy": {
+                    "protected": false
+                  },
+                  "verification": {
+                    "verified": false,
+                    "verified_type": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "entryId": "list-44",
+        "item": {
+          "itemContent": {
+            "__typename": "TimelineList",
+            "itemType": "TimelineTwitterList",
+            "list": {
+              "__typename": "List",
+              "id_str": "44",
+              "name": "Sparse list",
+              "member_count": -1,
+              "mode": "Unknown"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

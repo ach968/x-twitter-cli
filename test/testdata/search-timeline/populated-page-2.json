@@ -1,0 +1,84 @@
+{
+  "data": {
+    "search_by_raw_query": {
+      "search_timeline": {
+        "timeline": {
+          "instructions": [
+            {
+              "type": "TimelineAddEntries",
+              "entries": [
+                {
+                  "entryId": "tweet-200",
+                  "sortIndex": "200",
+                  "content": {
+                    "__typename": "TimelineTimelineItem",
+                    "entryType": "TimelineTimelineItem",
+                    "itemContent": {
+                      "__typename": "TimelineTweet",
+                      "itemType": "TimelineTweet",
+                      "tweetDisplayType": "Tweet",
+                      "tweet_results": {
+                        "result": {
+                          "__typename": "Tweet",
+                          "rest_id": "200",
+                          "legacy": {
+                            "full_text": "Example post from page two",
+                            "id_str": "200",
+                            "user_id_str": "20"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "entryId": "prompt-2",
+                  "sortIndex": "199",
+                  "content": {
+                    "__typename": "TimelineTimelineItem",
+                    "entryType": "TimelineTimelineItem",
+                    "itemContent": {
+                      "__typename": "TimelinePrompt",
+                      "itemType": "TimelinePrompt",
+                      "content": {
+                        "header": "Example page-two prompt"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "TimelineReplaceEntry",
+              "entry_id_to_replace": "cursor-top-old",
+              "entry": {
+                "entryId": "cursor-top-2",
+                "sortIndex": "201",
+                "content": {
+                  "__typename": "TimelineTimelineCursor",
+                  "entryType": "TimelineTimelineCursor",
+                  "cursorType": "Top",
+                  "value": "cursor-top-page-2-example"
+                }
+              }
+            },
+            {
+              "type": "TimelineReplaceEntry",
+              "entry_id_to_replace": "cursor-bottom-old",
+              "entry": {
+                "entryId": "cursor-bottom-2",
+                "sortIndex": "2",
+                "content": {
+                  "__typename": "TimelineTimelineCursor",
+                  "entryType": "TimelineTimelineCursor",
+                  "cursorType": "Bottom",
+                  "value": "cursor-bottom-page-2-example"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

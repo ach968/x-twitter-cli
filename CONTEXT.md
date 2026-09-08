@@ -20,6 +20,30 @@ _Avoid_: Default profile, main profile, user profile
 A stable, user-meaningful X read such as home timeline, search, or tweet detail, independent of the private request currently used to fulfill it.
 _Avoid_: Endpoint, GraphQL query
 
+**Search tab**:
+One of the result selections offered by X search: Top, Latest, People, Media, or Lists. A search tab determines the kind or ordering of results requested from the search operation.
+_Avoid_: Search mode, product
+
+**Search page**:
+The stable normalized output of one search request, containing the query, selected search tab, ordered results, continuation value, and non-fatal warnings.
+_Avoid_: SearchTimeline response, timeline instructions, API payload
+
+**Search result**:
+A normalized post, user, or list returned on a search page. Its kind is independent of the selected search tab.
+_Avoid_: Timeline entry, module, conversation result
+
+**User reference**:
+A compact account identity embedded in another search result, such as a post author, list owner, automated-account operator, or mention. It is distinct from a full user search result.
+_Avoid_: User summary, embedded profile
+
+**Next cursor**:
+An opaque continuation value for requesting the next page of results for the same search and tab. Its internal direction and encoding belong to X's timeline protocol.
+_Avoid_: Bottom cursor, page number
+
+**Community note**:
+Reader-contributed context displayed with a post after X determines that the note is helpful. It includes the note text and supporting source links and may accompany either a direct result or a quoted post.
+_Avoid_: Birdwatch pivot, annotation, warning
+
 **Browser-backed operation**:
 An operation fulfilled by navigating X's web application in the headless application profile and returning the matching network response. X's own frontend supplies volatile request metadata such as client transaction IDs.
 _Avoid_: Browser command, DOM scrape, direct request
