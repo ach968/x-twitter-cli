@@ -160,6 +160,12 @@ func (manager *Manager) ensureChromium(confirm ConfirmBrowserSetup) (browser.Chr
 				InstalledRevisions: prompt.InstalledRevisions,
 			})
 		},
+		ConfirmCleanup: func(prompt browser.ChromiumSetupPrompt) (bool, error) {
+			return confirm(BrowserSetupPrompt{
+				Action: prompt.Action, RequiredRevision: prompt.RequiredRevision,
+				InstalledRevisions: prompt.InstalledRevisions,
+			})
+		},
 	})
 }
 

@@ -97,6 +97,10 @@ func runContract(service managementservice.Service) commands.Handler {
 func browserSetupConfirmation(input io.Reader, output io.Writer) managementservice.ConfirmBrowserSetup {
 	reader := bufio.NewReader(input)
 	return func(prompt managementservice.BrowserSetupPrompt) (bool, error) {
+		if prompt.Action == "cleanup" {
+			_, _ = fmt.Fprintf(output, "New managed Chromium revision %s is ready. Remove older managed revisions %s? Warning: older twt builds may still require them. [y/N] ", prompt.RequiredRevision, strings.Join(prompt.InstalledRevisions, ", "))
+			return readConfirmation(reader)
+		}
 		action := prompt.Action
 		if action == "" {
 			action = "install"
@@ -106,17 +110,16 @@ func browserSetupConfirmation(input io.Reader, output io.Writer) managementservi
 		} else {
 			_, _ = fmt.Fprintf(output, "Managed Chromium revision %s is required. %s now? [y/N] ", prompt.RequiredRevision, displayAction(action))
 		}
-		answer, err := reader.ReadString('\n')
-		if err != nil && len(answer) == 0 && err != io.EOF {
-			return false, err
-		}
-		switch strings.ToLower(strings.TrimSpace(answer)) {
-		case "y", "yes":
-			return true, nil
-		default:
-			return false, nil
-		}
+		return readConfirmation(reader)
 	}
+}
+
+func readConfirmation(reader *bufio.Reader) (bool, error) {
+	answer, err := reader.ReadString('\n')
+	if err != nil && len(answer) == 0 && err != io.EOF {
+		return false, err
+	}
+	return strings.EqualFold(strings.TrimSpace(answer), "y") || strings.EqualFold(strings.TrimSpace(answer), "yes"), nil
 }
 
 func displayAction(action string) string {
@@ -135,7 +138,7 @@ func subcommandHelpRequested(arguments []string, subcommand string) bool {
 }
 
 func WriteSetupHelp(output io.Writer) {
-	_, _ = io.WriteString(output, "Usage: twt setup\n\nCheck for the required managed Chromium revision and offer to install or update it.\n")
+	_, _ = io.WriteString(output, "Usage: twt setup\n\nCheck for the required managed Chromium revision, offer to install or update it, and optionally remove older revisions after a successful update.\n")
 }
 
 func WriteAuthHelp(output io.Writer) {

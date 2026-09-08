@@ -154,7 +154,7 @@ The original interview assumed that normal data commands would navigate X and in
 
 **Matt's answer:** Require Rod-managed Chromium and offer to install it when setup discovers none, or update it when setup discovers only an older managed revision; avoid the complexity of default-browser detection and multiple browser implementations.
 
-**Decision:** Accepted with one packaging constraint: the interactive prompt belongs to explicit setup or first authentication, never binary installation.
+**Decision:** Accepted with one packaging constraint: the interactive prompt belongs to explicit setup or first authentication, never binary installation. After a successful revision update, offer a separate default-no cleanup prompt that warns older `twt` builds may still require the older managed revisions. Declining cleanup keeps the successful update and retains the older revisions.
 
 ### Q14: Contract-file validation and replacement
 

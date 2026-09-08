@@ -43,7 +43,10 @@ twt contract status
 ```
 
 `twt setup` checks for Rod's required managed Chromium revision and asks before
-installing or updating it. `twt auth login` performs the same check when needed,
+installing or updating it. After a successful update, it offers to remove older
+managed revisions with a warning that older `twt` builds may still require them.
+Declining cleanup keeps the update successful and leaves the older revisions in
+place. `twt auth login` performs the same check when needed,
 opens the isolated application profile headed for interactive X login, then
 captures, validates, and activates authentication state and operation contracts.
 

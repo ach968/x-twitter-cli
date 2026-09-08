@@ -28,7 +28,9 @@ type ChromiumSetupResult struct {
 type ChromiumSetupOptions struct {
 	ExecutablePath  string
 	ConfirmInstall  func(ChromiumSetupPrompt) (bool, error)
+	ConfirmCleanup  func(ChromiumSetupPrompt) (bool, error)
 	InstallChromium func() error
+	RemoveRevisions func(string, []string) error
 }
 
 func isExecutable(path string) bool {
@@ -83,6 +85,19 @@ func installManagedChromium() error {
 	return err
 }
 
+func removeManagedRevisions(cachePath string, revisions []string) error {
+	for _, revision := range revisions {
+		path := filepath.Join(cachePath, "chromium-"+revision)
+		if filepath.Dir(path) != filepath.Clean(cachePath) {
+			return fmt.Errorf("refusing to remove managed Chromium revision outside its cache")
+		}
+		if err := os.RemoveAll(path); err != nil {
+			return fmt.Errorf("remove managed Chromium revision %s: %w", revision, err)
+		}
+	}
+	return nil
+}
+
 func EnsureChromiumAvailable(options ChromiumSetupOptions) (ChromiumSetupResult, error) {
 	if options.ExecutablePath == "" {
 		options.ExecutablePath = expectedManagedChromiumPath()
@@ -122,6 +137,25 @@ func EnsureChromiumAvailable(options ChromiumSetupOptions) (ChromiumSetupResult,
 	}
 	if !isExecutable(options.ExecutablePath) {
 		return ChromiumSetupResult{}, fmt.Errorf("Chromium installation completed without producing the expected executable")
+	}
+	if action == "update" && options.ConfirmCleanup != nil {
+		cleanup, err := options.ConfirmCleanup(ChromiumSetupPrompt{
+			Action:             "cleanup",
+			RequiredRevision:   requiredRevision,
+			InstalledRevisions: filtered,
+		})
+		if err != nil {
+			return ChromiumSetupResult{}, err
+		}
+		if cleanup {
+			remove := options.RemoveRevisions
+			if remove == nil {
+				remove = removeManagedRevisions
+			}
+			if err := remove(cachePath, filtered); err != nil {
+				return ChromiumSetupResult{}, err
+			}
+		}
 	}
 	return ChromiumSetupResult{Status: "ready", ExecutablePath: options.ExecutablePath}, nil
 }
