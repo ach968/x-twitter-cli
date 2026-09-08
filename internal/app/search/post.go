@@ -98,7 +98,7 @@ func decodePostResultWithGuard(raw any, ancestors map[string]struct{}, depth int
 	result := postResult{
 		Type:              "post",
 		ID:                id,
-		Text:              text,
+		Text:              cleanReaderText(text),
 		Author:            author,
 		CreatedAt:         normalizeTime(stringAt(legacy, "created_at")),
 		Language:          optionalString(legacy, "lang"),
@@ -134,7 +134,7 @@ func decodeUserRef(raw map[string]any) *userRef {
 	username := optionalString(core, "screen_name")
 	ref := &userRef{
 		ID:           optionalString(raw, "rest_id"),
-		Name:         optionalString(core, "name"),
+		Name:         cleanOptionalText(optionalString(core, "name")),
 		Username:     username,
 		AvatarURL:    optionalNestedString(raw, "avatar", "image_url"),
 		Verification: semanticVerification(raw),
@@ -196,7 +196,7 @@ func decodeMentions(entities map[string]any) []userRef {
 			continue
 		}
 		username := optionalString(entity, "screen_name")
-		ref := userRef{ID: optionalString(entity, "id_str"), Name: optionalString(entity, "name"), Username: username}
+		ref := userRef{ID: optionalString(entity, "id_str"), Name: cleanOptionalText(optionalString(entity, "name")), Username: username}
 		if username != nil {
 			url := "https://x.com/" + *username
 			ref.URL = &url

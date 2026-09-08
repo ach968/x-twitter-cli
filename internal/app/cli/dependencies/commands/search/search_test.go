@@ -107,6 +107,38 @@ func TestMalformedArgumentsFailWithoutRequest(t *testing.T) {
 	}
 }
 
+func TestEmptyQueryExplainsHowToPassALiteralDollarSign(t *testing.T) {
+	requester := &controlledRequester{}
+	status, stdout, stderr := run(t, requester, "")
+	if status == 0 || stdout != "" {
+		t.Fatalf("status=%d stdout=%q", status, stdout)
+	}
+	want := "{\"code\":\"INVALID_ARGUMENT\",\"message\":\"search query is empty; shells expand $NAME inside double quotes, so use single quotes (for example: twt search '$NVDA') or escape the dollar sign\"}\n"
+	if stderr != want {
+		t.Fatalf("stderr=%q, want %q", stderr, want)
+	}
+	if len(requester.calls) != 0 {
+		t.Fatalf("empty query executed %d requests", len(requester.calls))
+	}
+}
+
+func TestOutputDecodesHTMLEntitiesWithoutJSONHTMLEscapes(t *testing.T) {
+	tweet := map[string]any{"rest_id": "html", "legacy": map[string]any{"full_text": "S&amp;P &gt; noise"}}
+	item := map[string]any{"itemType": "TimelineTweet", "tweet_results": map[string]any{"result": tweet}}
+	entry := map[string]any{"content": map[string]any{"itemContent": item}}
+	instruction := map[string]any{"type": "TimelineAddEntries", "entries": []any{entry}}
+	timeline := map[string]any{"instructions": []any{instruction}}
+	payload := map[string]any{"data": map[string]any{"search_by_raw_query": map[string]any{"search_timeline": map[string]any{"timeline": timeline}}}}
+	requester := &controlledRequester{result: app.OperationResult{OK: true, Payload: payload}}
+	status, stdout, stderr := run(t, requester, "markets")
+	if status != 0 || stderr != "" {
+		t.Fatalf("status=%d stderr=%q", status, stderr)
+	}
+	if !strings.Contains(stdout, `"text":"S&P > noise"`) || strings.Contains(stdout, `\u0026`) || strings.Contains(stdout, `&amp;`) {
+		t.Fatalf("stdout retains HTML encoding: %s", stdout)
+	}
+}
+
 func TestOperationFailureUsesStableErrorDocument(t *testing.T) {
 	requester := &controlledRequester{result: app.OperationResult{OK: false, Error: &app.OperationFailure{Code: "RATE_LIMITED", Message: "X rate-limited the request"}}}
 	status, stdout, stderr := run(t, requester, "query")

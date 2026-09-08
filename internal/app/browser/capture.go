@@ -27,6 +27,23 @@ type ContractCaptureOptions struct {
 	Timeout     time.Duration
 }
 
+type AuthenticationRequiredError struct {
+	URL string
+}
+
+func (err *AuthenticationRequiredError) Error() string {
+	return "X authentication is required"
+}
+
+func authenticationRequiredURL(value string) bool {
+	parsed, err := url.Parse(value)
+	if err != nil {
+		return false
+	}
+	path := strings.ToLower(parsed.Path)
+	return path == "/login" || strings.HasPrefix(path, "/i/flow/login") || strings.HasPrefix(path, "/account/access")
+}
+
 func recordParameter(parsed *url.URL, name string) (map[string]any, error) {
 	value := parsed.Query().Get(name)
 	if value == "" {
@@ -186,6 +203,11 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 			select {
 			case <-notify:
 			case <-timer.C:
+				if options.Headless {
+					if info, infoErr := page.Info(); infoErr == nil && authenticationRequiredURL(info.URL) {
+						return &AuthenticationRequiredError{URL: info.URL}
+					}
+				}
 				values := make([]string, len(names))
 				for i, name := range names {
 					values[i] = string(name)
@@ -213,6 +235,11 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 		}
 		if err = page.WaitLoad(); err != nil {
 			return result, err
+		}
+		if options.Headless {
+			if info, infoErr := page.Info(); infoErr == nil && authenticationRequiredURL(info.URL) {
+				return result, &AuthenticationRequiredError{URL: info.URL}
+			}
 		}
 		if err = waitForOperations(step.WaitFor); err != nil {
 			return result, err

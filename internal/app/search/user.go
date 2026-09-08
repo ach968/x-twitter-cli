@@ -60,9 +60,9 @@ func decodeUserResult(itemContent map[string]any) (userResult, bool) {
 	result := userResult{
 		Type:                "user",
 		ID:                  id,
-		Name:                optionalString(core, "name"),
+		Name:                cleanOptionalText(optionalString(core, "name")),
 		Username:            username,
-		Bio:                 optionalNestedString(user, "profile_bio", "description"),
+		Bio:                 cleanOptionalText(optionalNestedString(user, "profile_bio", "description")),
 		AvatarURL:           nonEmptyNestedString(user, "avatar", "image_url"),
 		BannerURL:           nonEmptyNestedString(user, "banner", "image_url"),
 		WebsiteURL:          expandedWebsiteURL(user),
@@ -116,7 +116,7 @@ func decodeAffiliation(user map[string]any) *affiliation {
 		return nil
 	}
 	affiliation := &affiliation{
-		Name:     optionalString(label, "description"),
+		Name:     cleanOptionalText(optionalString(label, "description")),
 		URL:      canonicalXURL(optionalNestedString(label, "url", "url")),
 		BadgeURL: nonEmptyNestedString(label, "badge", "url"),
 	}
@@ -161,7 +161,7 @@ func decodeProfessional(user map[string]any) *professional {
 		if !ok {
 			continue
 		}
-		if name := stringAt(category, "name"); name != "" {
+		if name := cleanReaderText(stringAt(category, "name")); name != "" {
 			categories = append(categories, name)
 		}
 	}

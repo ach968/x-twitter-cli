@@ -342,7 +342,10 @@ Example:
 
 **Matt's answer:** Approved the recommendation.
 
-**Decision:** Accepted.
+**Decision:** Accepted. A later reader-facing formatting requirement preserves
+the authoritative content but collapses presentation whitespace, decodes HTML
+character references, and renders straight double quotes typographically. Text
+remains untruncated.
 
 ### Q32: Quoted posts
 

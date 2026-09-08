@@ -42,7 +42,7 @@ func decodeMediaItem(item map[string]any) (mediaResult, bool) {
 		Type:    mediaType,
 		Width:   countAt(original, "width"),
 		Height:  countAt(original, "height"),
-		AltText: optionalString(item, "ext_alt_text"),
+		AltText: cleanOptionalText(optionalString(item, "ext_alt_text")),
 	}
 	thumbnail := optionalString(item, "media_url_https")
 	if mediaType == "image" {

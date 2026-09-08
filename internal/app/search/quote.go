@@ -48,7 +48,7 @@ func decodeCommunityNote(tweet map[string]any) *communityNote {
 	url := fmt.Sprintf("https://x.com/i/communitynotes/n/%s", id)
 	return &communityNote{
 		ID:       id,
-		Text:     text,
+		Text:     cleanReaderText(text),
 		Language: optionalString(note, "language"),
 		Sources:  decodeCommunityNoteLinks(subtitle),
 		URL:      &url,

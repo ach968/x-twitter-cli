@@ -41,8 +41,8 @@ func decodeListResult(itemContent map[string]any) (listResult, bool) {
 	result := listResult{
 		Type:        "list",
 		ID:          id,
-		Name:        optionalString(rawList, "name"),
-		Description: optionalString(rawList, "description"),
+		Name:        cleanOptionalText(optionalString(rawList, "name")),
+		Description: cleanOptionalText(optionalString(rawList, "description")),
 		Owner:       decodeListOwner(rawList),
 		Private:     decodeListPrivacy(rawList),
 		BannerURL:   decodeListBanner(rawList),

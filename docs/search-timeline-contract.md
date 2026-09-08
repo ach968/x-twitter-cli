@@ -87,8 +87,12 @@ A result is a flat discriminated object. Its `type` is `post`, `user`, or
 ```
 
 `text` is the authoritative note-post text when available, otherwise legacy
-full text. It is neither truncated nor rewritten; expanded destinations are
-available through `links`.
+full text. It is not truncated. For agent-readable JSON, presentation whitespace
+is collapsed to single spaces, HTML character references are decoded, and
+straight double quotes are rendered as typographic quotes. Expanded destinations
+are available through `links`. The same text cleanup applies to quoted posts,
+Community Notes, names, biographies, list descriptions, and media alternative
+text.
 
 `reply_to` is null for a non-reply. For a reply it is:
 

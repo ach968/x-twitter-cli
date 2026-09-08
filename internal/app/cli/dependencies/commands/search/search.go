@@ -91,7 +91,10 @@ func parseArguments(arguments []string) (string, searchresult.Tab, *string, erro
 			positionals = append(positionals, argument)
 		}
 	}
-	if len(positionals) != 1 || strings.TrimSpace(positionals[0]) == "" {
+	if len(positionals) == 1 && strings.TrimSpace(positionals[0]) == "" {
+		return "", "", nil, errors.New("search query is empty; shells expand $NAME inside double quotes, so use single quotes (for example: twt search '$NVDA') or escape the dollar sign")
+	}
+	if len(positionals) != 1 {
 		return "", "", nil, errors.New("search requires exactly one non-empty query")
 	}
 	return positionals[0], tab, cursor, nil

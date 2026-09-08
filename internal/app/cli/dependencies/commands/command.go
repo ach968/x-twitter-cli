@@ -25,7 +25,9 @@ func WriteFailure(output io.Writer, code, message string) int {
 }
 
 func WriteJSON(output io.Writer, value any, status int) int {
-	if err := json.NewEncoder(output).Encode(value); err != nil {
+	encoder := json.NewEncoder(output)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(value); err != nil {
 		return ExitFailure
 	}
 	return status

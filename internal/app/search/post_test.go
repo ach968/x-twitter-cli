@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ach968/x-twt-cli/internal/app/search"
@@ -63,6 +64,48 @@ func TestDecodePageNormalizesPostEntitiesReplyAndLargeID(t *testing.T) {
 	want := `{"query":"entities","tab":"latest","results":[{"type":"post","id":"2095005406548341158","url":"https://x.com/author/status/2095005406548341158","text":"Replying to @other about #Go and $X: https://t.co/abc","author":{"id":"123","name":"Author","username":"author","url":"https://x.com/author","avatar_url":null,"verification":"premium","protected":null},"created_at":"2026-09-01T21:26:00Z","language":"en","conversation_id":"2095000000000000000","reply_to":{"post_id":"2095000000000000001","user_id":"456","username":"other"},"metrics":{"replies":0,"reposts":4,"quotes":2,"likes":99,"bookmarks":0,"views":null},"possibly_sensitive":false,"links":[{"url":"https://example.test/article","display_url":"example.test/article"}],"mentions":[{"id":"456","name":"Other","username":"other","url":"https://x.com/other","avatar_url":null,"verification":null,"protected":null}],"hashtags":["Go"],"cashtags":["X"],"media":[],"quoted_post":null,"community_note":null}],"next_cursor":null,"warnings":[]}`
 	if string(got) != want {
 		t.Fatalf("\n got %s\nwant %s", got, want)
+	}
+}
+
+func TestDecodePageCleansReaderFacingText(t *testing.T) {
+	source := postSource(map[string]any{
+		"rest_id": "reader-friendly",
+		"core": map[string]any{"user_results": map[string]any{"result": map[string]any{
+			"rest_id": "author", "core": map[string]any{"name": "\"Agent\"\nName", "screen_name": "agent"},
+		}}},
+		"legacy": map[string]any{
+			"full_text": "First line\n\n\"Tweet\"    with spacing",
+			"extended_entities": map[string]any{"media": []any{map[string]any{
+				"id_str": "media", "type": "photo", "media_url_https": "https://img.test/photo.jpg", "ext_alt_text": "Chart\n  called \"Revenue\"",
+			}}},
+		},
+		"birdwatch_pivot": map[string]any{
+			"note":     map[string]any{"rest_id": "note"},
+			"subtitle": map[string]any{"text": "Context says \"Incorrect\"\nSee source"},
+		},
+	})
+
+	page, err := search.DecodePage(source, "formatting", search.TabTop)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := json.Marshal(page)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(got)
+	for _, want := range []string{
+		`"text":"First line “Tweet” with spacing"`,
+		`"name":"“Agent” Name"`,
+		`"alt_text":"Chart called “Revenue”"`,
+		`"text":"Context says “Incorrect” See source"`,
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("output missing %q:\n%s", want, text)
+		}
+	}
+	if strings.Contains(text, `\n`) || strings.Contains(text, `\"`) {
+		t.Fatalf("output retains noisy escaped text: %s", text)
 	}
 }
 

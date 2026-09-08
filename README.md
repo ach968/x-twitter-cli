@@ -31,12 +31,36 @@ Run the deterministic unit suite:
 go test ./...
 ```
 
+## Setup, authentication, and contracts
+
+The explicit maintenance commands are:
+
+```bash
+twt setup
+twt auth login
+twt contract refresh
+twt contract status
+```
+
+`twt setup` checks for Rod's required managed Chromium revision and asks before
+installing or updating it. `twt auth login` performs the same check when needed,
+opens the isolated application profile headed for interactive X login, then
+captures, validates, and activates authentication state and operation contracts.
+
+`twt contract refresh` is always explicit. It reuses the application profile
+headlessly while authentication remains valid and opens it headed only when X
+requires login or a challenge. A candidate contract set replaces the active file
+only after both required operations validate successfully. `twt contract status`
+performs a local structural check without launching Chromium or contacting X;
+it cannot prove that stored authentication or contracts are still accepted by X.
+
 ## Search command
 
 `twt search` returns one normalized JSON search page on standard output:
 
 ```bash
 twt search 'golang'
+twt search '$NVDA'
 twt search 'golang' --tab people
 twt search 'golang' --tab=LATEST --cursor 'opaque-continuation-value'
 ```
@@ -47,12 +71,23 @@ case-insensitive; its accepted values are `top` (the default), `latest`,
 continuation unchanged to X. It does not accept a result limit, raw-output
 mode, or client-side filtering.
 
+Shell quoting applies before `twt` receives the query. In zsh, bash, and similar
+shells, double quotes still expand `$NAME`; if `NVDA` is unset, `"$NVDA"` becomes
+an empty argument. Use single quotes (`'$NVDA'`) or escape the dollar sign
+(`"\$NVDA"`) for a literal cashtag. When an empty argument reaches the command,
+the error explains this distinction.
+
 Successful output is a single JSON document with `query`, canonical `tab`,
 ordered `results`, nullable `next_cursor`, and `warnings`. Results are flat
 `post`, `user`, or `list` objects. Refer to the accepted
 [SearchTimeline contract](docs/search-timeline-contract.md) and its
 [machine-readable schema](docs/search-timeline.schema.json) for fields and
 nullability.
+
+Reader-facing text is emitted on one line: source whitespace is collapsed,
+HTML character references are decoded, and straight double quotes are rendered
+as typographic quotes. This keeps raw JSON readable to agents without changing
+the surrounding machine-readable structure.
 
 To fetch the next page, pass the previous page's non-null `next_cursor` back
 unchanged:
