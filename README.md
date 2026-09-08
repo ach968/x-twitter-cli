@@ -82,6 +82,14 @@ Production browser workflows use the Rod-managed Chromium revision under the use
 
 Real-X tests remain explicit and opt-in. They use authentication captured from the application profile under the XDG state directory and must never run in ordinary CI. The live smoke verifies contract capture and direct execution of both operations; it does not probe X's behavior after deliberately corrupting requests.
 
+Open any X page in a headed Chromium window using the existing authenticated application profile:
+
+```bash
+go run ./sandbox/inspectx 'https://x.com/jemelehill/status/2095005406548341158'
+```
+
+The Go helper accepts only HTTPS URLs on `x.com` or its subdomains. It uses `$XDG_STATE_HOME/x-twt/chromium-profile` (or `~/.local/state/x-twt/chromium-profile`) and does not copy or print authentication. It reports whether both required X cookies are present, prints its local DevTools URL for browser inspection, and remains open until interrupted. It is headed by default; pass `--headless` when no visible window is wanted. Override the Chromium executable with `TWT_CHROMIUM_EXECUTABLE` or `--chromium` when necessary.
+
 ## SearchTimeline evidence
 
 Capture one successful SearchTimeline source payload for the output-discovery corpus:

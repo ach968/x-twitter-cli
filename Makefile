@@ -4,7 +4,7 @@ CHROMIUM ?= /usr/bin/chromium
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build run test test-race test-browser test-browser-race test-live capture-search-evidence fmt fmt-check vet check check-browser clean
+.PHONY: help build run auth-browser test test-race test-browser test-browser-race test-live capture-search-evidence fmt fmt-check vet check check-browser clean
 
 help: ## Show available targets.
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z0-9_-]+:.*## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -14,6 +14,9 @@ build: ## Build the twt executable.
 
 run: ## Run the current twt entrypoint without keeping a binary.
 	$(GO) run ./cmd/twt
+
+auth-browser: ## Temporarily open the persisted application profile for interactive login.
+	$(CHROMIUM) --user-data-dir="$$HOME/.local/state/x-twt/chromium-profile" https://x.com/home
 
 test: ## Run deterministic unit tests.
 	$(GO) test -v ./...
