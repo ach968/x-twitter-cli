@@ -142,7 +142,7 @@ func WriteSetupHelp(output io.Writer) {
 }
 
 func WriteAuthHelp(output io.Writer) {
-	_, _ = io.WriteString(output, "Usage: twt auth login\n\nOpen the application profile for interactive X login, then capture and activate operation contracts.\n")
+	_, _ = io.WriteString(output, "Usage: twt auth login\n\nCheck the application profile headlessly, open it headed only when interactive X login is required, then capture and activate operation contracts.\n")
 }
 
 func WriteContractHelp(output io.Writer) {

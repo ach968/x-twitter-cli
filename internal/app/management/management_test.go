@@ -70,7 +70,7 @@ func TestLoginCapturesPersistsAndActivatesState(t *testing.T) {
 	options := serviceOptions(paths)
 	options.Capture = func(options browser.ContractCaptureOptions) (app.CapturedState, error) {
 		captureCalls++
-		if options.Headless || options.ProfilePath != paths.ProfilePath {
+		if !options.Headless || options.ProfilePath != paths.ProfilePath {
 			t.Fatalf("capture options = %#v", options)
 		}
 		return capturedState(), nil
@@ -95,6 +95,41 @@ func TestLoginCapturesPersistsAndActivatesState(t *testing.T) {
 	}
 	if filepath.Dir(paths.ActiveContractPath) == "." {
 		t.Fatal("test did not exercise nested state directories")
+	}
+}
+
+func TestLoginUsesHeadedBrowserOnlyWhenAuthenticationIsRequired(t *testing.T) {
+	paths := testPaths(t)
+	options := serviceOptions(paths)
+	var headlessValues []bool
+	options.Capture = func(input browser.ContractCaptureOptions) (app.CapturedState, error) {
+		headlessValues = append(headlessValues, input.Headless)
+		if input.Headless {
+			return app.CapturedState{}, &browser.AuthenticationRequiredError{URL: "https://x.com/i/flow/login"}
+		}
+		return capturedState(), nil
+	}
+	service := management.New(options)
+	result, err := service.Login(context.Background(), func(management.BrowserSetupPrompt) (bool, error) { return true, nil })
+	if err != nil || result.Status != "authenticated" {
+		t.Fatalf("result=%#v err=%v", result, err)
+	}
+	if len(headlessValues) != 2 || !headlessValues[0] || headlessValues[1] {
+		t.Fatalf("headless sequence=%v", headlessValues)
+	}
+
+	unknownFailure := errors.New("capture transport failed")
+	headlessValues = nil
+	options.Capture = func(input browser.ContractCaptureOptions) (app.CapturedState, error) {
+		headlessValues = append(headlessValues, input.Headless)
+		return app.CapturedState{}, unknownFailure
+	}
+	service = management.New(options)
+	if _, err := service.Login(context.Background(), func(management.BrowserSetupPrompt) (bool, error) { return true, nil }); !errors.Is(err, unknownFailure) {
+		t.Fatalf("error=%v", err)
+	}
+	if len(headlessValues) != 1 || !headlessValues[0] {
+		t.Fatalf("unknown failure unexpectedly opened headed browser: %v", headlessValues)
 	}
 }
 

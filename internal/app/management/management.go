@@ -84,7 +84,7 @@ func (manager *Manager) Login(ctx context.Context, confirm ConfirmBrowserSetup) 
 	generatorContext, cancelGenerator := context.WithCancel(ctx)
 	defer cancelGenerator()
 	generatorResult := manager.initializeTransactionIDs(generatorContext)
-	capture, err := manager.capture(false, 10*time.Minute)
+	capture, err := manager.captureWithAuthenticationFallback()
 	if err != nil {
 		cancelGenerator()
 		<-generatorResult
@@ -107,20 +107,11 @@ func (manager *Manager) RefreshContracts(ctx context.Context) (StateChangeResult
 	generatorContext, cancelGenerator := context.WithCancel(ctx)
 	defer cancelGenerator()
 	generatorResult := manager.initializeTransactionIDs(generatorContext)
-	capture, err := manager.capture(true, time.Minute)
+	capture, err := manager.captureWithAuthenticationFallback()
 	if err != nil {
-		var authenticationRequired *browser.AuthenticationRequiredError
-		if !errors.As(err, &authenticationRequired) {
-			cancelGenerator()
-			<-generatorResult
-			return StateChangeResult{}, err
-		}
-		capture, err = manager.capture(false, 10*time.Minute)
-		if err != nil {
-			cancelGenerator()
-			<-generatorResult
-			return StateChangeResult{}, err
-		}
+		cancelGenerator()
+		<-generatorResult
+		return StateChangeResult{}, err
 	}
 	generator := <-generatorResult
 	if generator.err != nil {
@@ -179,6 +170,18 @@ func (manager *Manager) capture(headless bool, timeout time.Duration) (app.Captu
 			{URL: "https://x.com/search?q=x&src=typed_query", WaitFor: []app.OperationName{app.SearchTimeline}},
 		},
 	})
+}
+
+func (manager *Manager) captureWithAuthenticationFallback() (app.CapturedState, error) {
+	capture, err := manager.capture(true, time.Minute)
+	if err == nil {
+		return capture, nil
+	}
+	var authenticationRequired *browser.AuthenticationRequiredError
+	if !errors.As(err, &authenticationRequired) {
+		return app.CapturedState{}, err
+	}
+	return manager.capture(false, 10*time.Minute)
 }
 
 type transactionIDResult struct {

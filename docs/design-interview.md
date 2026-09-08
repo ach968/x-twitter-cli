@@ -60,7 +60,7 @@ The original interview assumed that normal data commands would navigate X and in
 
 **Question:** Should `auth login` open a headed browser for interactive X login and preserve local authentication state, rather than making copied cookies or cURL commands the primary onboarding path?
 
-**Recommendation:** Yes. First ensure the Rod-managed Chromium revision is available, offering an explicit installation or update prompt when needed. Launch the isolated application profile headed with the tested `AutomationControlled` compatibility flag so federated Google-to-X login can complete, without adding a fixed debugging port or wildcard remote origin. After login succeeds, use the authenticated browser workflow to capture the initial operation contracts and generate the user's contract properties file. Keep cookie or cURL import as an advanced migration and recovery path only.
+**Recommendation:** Yes. First ensure the Rod-managed Chromium revision is available, offering an explicit installation or update prompt when needed. Check the isolated application profile headlessly first; launch it headed with the tested `AutomationControlled` compatibility flag only when X redirects to login or an interactive challenge, so federated Google-to-X login can complete without adding a fixed debugging port or wildcard remote origin. After login succeeds, use the authenticated browser workflow to capture the initial operation contracts and generate the user's contract properties file. Keep cookie or cURL import as an advanced migration and recovery path only.
 
 **Matt's answer:** Yes.
 

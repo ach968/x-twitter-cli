@@ -46,8 +46,9 @@ twt contract status
 installing or updating it. After a successful update, it offers to remove older
 managed revisions with a warning that older `twt` builds may still require them.
 Declining cleanup keeps the update successful and leaves the older revisions in
-place. `twt auth login` performs the same check when needed,
-opens the isolated application profile headed for interactive X login, then
+place. `twt auth login` performs the same check when needed, first checks the
+isolated application profile headlessly, opens it headed only when X requires
+login or an interactive challenge, then
 captures, validates, and activates authentication state and operation contracts.
 
 `twt contract refresh` is always explicit. It reuses the application profile
