@@ -1,0 +1,32 @@
+{
+  "data": {
+    "bookmark_timeline_v2": {
+      "timeline": {
+        "instructions": [
+          {
+            "type": "TimelineAddEntries",
+            "entries": [
+              {
+                "entryId": "bookmark-post-a",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "rest_id": "synthetic-post-a",
+                        "core": {"user_results": {"result": {"rest_id": "synthetic-author-a", "core": {"name": "Synthetic Author", "screen_name": "synthetic_author"}}}},
+                        "legacy": {"full_text": "A synthetic saved post", "conversation_id_str": "synthetic-post-a", "entities": {"urls": [], "user_mentions": [], "hashtags": [], "symbols": []}}
+                      }
+                    }
+                  }
+                }
+              },
+              {"entryId": "bottom-initial", "content": {"entryType": "TimelineTimelineCursor", "cursorType": "Bottom", "value": "synthetic-next-initial"}}
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

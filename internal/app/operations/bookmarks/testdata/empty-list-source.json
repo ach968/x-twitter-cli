@@ -1,0 +1,11 @@
+{
+  "data": {
+    "bookmark_timeline_v2": {
+      "timeline": {
+        "instructions": [
+          {"type": "TimelineAddEntries", "entries": [{"entryId": "top-empty", "content": {"entryType": "TimelineTimelineCursor", "cursorType": "Top", "value": "synthetic-top"}}]}
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:x-twt-cli:schema:bookmarks-page",
+  "title": "x-twt Bookmarks page",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query", "bookmarks", "next_cursor", "warnings"],
+  "properties": {
+    "query": { "type": ["string", "null"], "minLength": 1 },
+    "bookmarks": {
+      "type": "array",
+      "items": { "$ref": "urn:x-twt-cli:schema:shared-post#/$defs/post" }
+    },
+    "next_cursor": { "type": ["string", "null"] },
+    "warnings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/warning" }
+    }
+  },
+  "$defs": {
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "const": "UNKNOWN_BOOKMARK_ENTRY" },
+        "message": { "const": "Skipped an unsupported bookmark entry" }
+      }
+    }
+  }
+}

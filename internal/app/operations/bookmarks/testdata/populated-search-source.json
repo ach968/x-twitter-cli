@@ -1,0 +1,16 @@
+{
+  "data": {
+    "search_by_raw_query": {
+      "bookmarks_search_timeline": {
+        "timeline": {
+          "instructions": [
+            {"type": "TimelineAddEntries", "entries": [
+              {"entryId": "bookmark-search-post", "content": {"entryType": "TimelineTimelineItem", "itemContent": {"itemType": "TimelineTweet", "tweet_results": {"result": {"rest_id": "synthetic-search-post", "legacy": {"full_text": "A query-matched synthetic post", "entities": {"urls": [], "user_mentions": [], "hashtags": [], "symbols": []}}}}}}},
+              {"entryId": "bottom-search", "content": {"entryType": "TimelineTimelineCursor", "cursorType": "Bottom", "value": "synthetic-search-next"}}
+            ]}
+          ]
+        }
+      }
+    }
+  }
+}

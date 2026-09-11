@@ -1,0 +1,17 @@
+{
+  "data": {
+    "bookmark_timeline_v2": {
+      "timeline": {
+        "instructions": [
+          {"type": "TimelineAddEntries", "entries": [
+            {"entryId": "bookmark-context", "content": {"entryType": "TimelineTimelineItem", "itemContent": {"itemType": "TimelineTweet", "tweet_results": {"result": {
+              "rest_id": "synthetic-root", "legacy": {"full_text": "Synthetic root context", "conversation_id_str": "synthetic-thread", "entities": {"urls": [], "user_mentions": [], "hashtags": [], "symbols": []}},
+              "quoted_status_result": {"result": {"rest_id": "synthetic-quote", "legacy": {"full_text": "Synthetic quoted context", "entities": {"urls": [], "user_mentions": [], "hashtags": [], "symbols": []}}, "quoted_status_result": {"result": {"rest_id": "synthetic-nested-quote", "legacy": {"full_text": "Synthetic nested context", "entities": {"urls": [], "user_mentions": [], "hashtags": [], "symbols": []}}}}}}
+            }}}}},
+            {"entryId": "bottom-context", "content": {"entryType": "TimelineTimelineCursor", "cursorType": "Bottom", "value": "synthetic-context-next"}}
+          ]}
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "data": {
+    "bookmark_timeline_v2": {
+      "timeline": {
+        "instructions": [
+          {"type": "TimelineAddEntries", "entries": [
+            {"entryId": "bookmark-known", "content": {"entryType": "TimelineTimelineItem", "itemContent": {"itemType": "TimelineTweet", "tweet_results": {"result": {"rest_id": "synthetic-known", "legacy": {"full_text": "A usable synthetic post", "entities": {"urls": [], "user_mentions": [], "hashtags": [], "symbols": []}}}}}}},
+            {"entryId": "bookmark-unknown", "content": {"entryType": "TimelineTimelineItem", "itemContent": {"itemType": "TimelineUnsupportedResult", "result": {"rest_id": "intentionally-not-published"}}}},
+            {"entryId": "bottom-partial", "content": {"entryType": "TimelineTimelineCursor", "cursorType": "Bottom", "value": "synthetic-partial-next"}}
+          ]}
+        ]
+      }
+    }
+  }
+}

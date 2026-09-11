@@ -19,6 +19,14 @@ func testContracts() app.ContractProperties {
 			Family: "graphql", Host: "x.com", Path: "/i/api/graphql/search-id/SearchTimeline", Method: "GET", Encoding: "query",
 			Variables: map[string]any{"count": float64(20)}, Features: map[string]any{}, FieldToggles: map[string]any{},
 		},
+		app.Bookmarks: {
+			Family: "graphql", Host: "x.com", Path: "/i/api/graphql/bookmarks-id/Bookmarks", Method: "GET", Encoding: "query",
+			Variables: map[string]any{"count": float64(20)}, Features: map[string]any{}, FieldToggles: map[string]any{},
+		},
+		app.BookmarkSearchTimeline: {
+			Family: "graphql", Host: "x.com", Path: "/i/api/graphql/bookmark-search-id/BookmarkSearchTimeline", Method: "GET", Encoding: "query",
+			Variables: map[string]any{"count": float64(20)}, Features: map[string]any{}, FieldToggles: map[string]any{},
+		},
 	}}
 }
 
@@ -68,7 +76,7 @@ func TestLoadRejectsInvalidProperties(t *testing.T) {
 			value["operations"].(map[string]any)["UnknownOperation"] = value["operations"].(map[string]any)["HomeTimeline"]
 		}},
 		{"incomplete operations", "INVALID_CONTRACT_PROPERTIES", func(value map[string]any) {
-			delete(value["operations"].(map[string]any), "SearchTimeline")
+			delete(value["operations"].(map[string]any), "BookmarkSearchTimeline")
 		}},
 	}
 	for _, test := range cases {
@@ -97,5 +105,11 @@ func TestLoadReportsUnreadableAndMalformedFiles(t *testing.T) {
 	}
 	if _, err := Load(filepath.Join(t.TempDir(), "missing.json")); ErrorCode(err) != "CONTRACT_PROPERTIES_UNREADABLE" {
 		t.Fatalf("unexpected unreadable error: %v", err)
+	}
+}
+
+func TestDecodeOperationObjectRejectsDuplicateNames(t *testing.T) {
+	if _, err := decodeOperationObject([]byte(`{"Bookmarks":{},"Bookmarks":{}}`)); err == nil {
+		t.Fatal("expected duplicate operation name to be rejected")
 	}
 }

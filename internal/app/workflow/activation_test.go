@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"encoding/json"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,8 +23,10 @@ var testTransactionIDs = transactionIDFunc(func(string, string) (string, error) 
 })
 
 type transportFunc struct {
-	home   func(app.PreparedRequest) (app.UpstreamResponse, error)
-	search func(app.PreparedRequest) (app.UpstreamResponse, error)
+	home           func(app.PreparedRequest) (app.UpstreamResponse, error)
+	search         func(app.PreparedRequest) (app.UpstreamResponse, error)
+	bookmarks      func(app.PreparedRequest) (app.UpstreamResponse, error)
+	bookmarkSearch func(app.PreparedRequest) (app.UpstreamResponse, error)
 }
 
 func (transport transportFunc) Execute(_ context.Context, operation app.OperationName, request app.PreparedRequest) (app.UpstreamResponse, error) {
@@ -32,6 +35,10 @@ func (transport transportFunc) Execute(_ context.Context, operation app.Operatio
 		return transport.home(request)
 	case app.SearchTimeline:
 		return transport.search(request)
+	case app.Bookmarks:
+		return transport.bookmarks(request)
+	case app.BookmarkSearchTimeline:
+		return transport.bookmarkSearch(request)
 	default:
 		return app.UpstreamResponse{}, nil
 	}
@@ -40,8 +47,10 @@ func (transport transportFunc) Execute(_ context.Context, operation app.Operatio
 func successfulTransport() transportFunc {
 	success := app.UpstreamResponse{Status: 200, Body: `{"data":{"ok":true}}`}
 	return transportFunc{
-		home:   func(app.PreparedRequest) (app.UpstreamResponse, error) { return success, nil },
-		search: func(app.PreparedRequest) (app.UpstreamResponse, error) { return success, nil },
+		home:           func(app.PreparedRequest) (app.UpstreamResponse, error) { return success, nil },
+		search:         func(app.PreparedRequest) (app.UpstreamResponse, error) { return success, nil },
+		bookmarks:      func(app.PreparedRequest) (app.UpstreamResponse, error) { return success, nil },
+		bookmarkSearch: func(app.PreparedRequest) (app.UpstreamResponse, error) { return success, nil },
 	}
 }
 
@@ -53,6 +62,14 @@ func testContracts() app.ContractProperties {
 		},
 		app.SearchTimeline: {
 			Family: "graphql", Host: "x.com", Path: "/i/api/graphql/search-id/SearchTimeline", Method: "GET", Encoding: "query",
+			Variables: map[string]any{}, Features: map[string]any{}, FieldToggles: map[string]any{},
+		},
+		app.Bookmarks: {
+			Family: "graphql", Host: "x.com", Path: "/i/api/graphql/bookmarks-id/Bookmarks", Method: "GET", Encoding: "query",
+			Variables: map[string]any{}, Features: map[string]any{}, FieldToggles: map[string]any{},
+		},
+		app.BookmarkSearchTimeline: {
+			Family: "graphql", Host: "x.com", Path: "/i/api/graphql/bookmark-search-id/BookmarkSearchTimeline", Method: "GET", Encoding: "query",
 			Variables: map[string]any{}, Features: map[string]any{}, FieldToggles: map[string]any{},
 		},
 	}}
@@ -101,5 +118,28 @@ func TestValidateAndActivateCandidate(t *testing.T) {
 	contents, _ = os.ReadFile(active)
 	if !strings.Contains(string(contents), "old-id") {
 		t.Fatal("active contracts changed after rejection")
+	}
+
+	writeContracts(t, active, old)
+	writeContracts(t, candidate, testContracts())
+	rejected = successfulTransport()
+	rejected.bookmarkSearch = func(request app.PreparedRequest) (app.UpstreamResponse, error) {
+		parsed, err := url.Parse(request.URL)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var variables map[string]any
+		if err := json.Unmarshal([]byte(parsed.Query().Get("variables")), &variables); err != nil || variables["rawQuery"] != "x-twt-contract-validation-improbable-6d1e2f" {
+			t.Fatalf("bookmark-search validation query was not preserved: %s", request.URL)
+		}
+		return app.UpstreamResponse{Status: 403}, nil
+	}
+	result, err = ValidateAndActivateCandidate(context.Background(), candidate, active, app.AuthenticationState{}, rejected, testTransactionIDs)
+	if err != nil || result.Activated {
+		t.Fatalf("bookmark-search rejection activated candidate: %#v %v", result, err)
+	}
+	contents, _ = os.ReadFile(active)
+	if !strings.Contains(string(contents), "old-id") {
+		t.Fatal("active contracts changed after bookmark-search rejection")
 	}
 }

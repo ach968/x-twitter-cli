@@ -32,6 +32,18 @@ _Avoid_: SearchTimeline response, timeline instructions, API payload
 A normalized post, user, or list returned on a search page. Its kind is independent of the selected search tab.
 _Avoid_: Timeline entry, module, conversation result
 
+**Bookmarked post**:
+A normalized post returned because the authenticated identity saved it. Its position reflects X's bookmark order, which is distinct from the post's creation time.
+_Avoid_: Bookmark record, saved tweet
+
+**Bookmark page**:
+The stable normalized output of one All Bookmarks or bookmark-search request, containing ordered bookmarked posts, continuation state, and non-fatal warnings.
+_Avoid_: Bookmarks response, bookmark timeline, API payload
+
+**Bookmark search**:
+An X-provided search limited to the authenticated identity's bookmarks. It is distinct from public search and from downloading All Bookmarks for local filtering.
+_Avoid_: Search tab, local bookmark filter
+
 **User reference**:
 A compact account identity embedded in another search result, such as a post author, list owner, automated-account operator, or mention. It is distinct from a full user search result.
 _Avoid_: User summary, embedded profile

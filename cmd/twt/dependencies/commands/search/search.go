@@ -6,10 +6,10 @@ import (
 	"sync"
 
 	transaction "github.com/ach968/x-client-transaction-id-go"
-	app "github.com/ach968/x-twt-cli/internal/app"
 	searchcommand "github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands/search"
 	"github.com/ach968/x-twt-cli/internal/app/contracts"
 	"github.com/ach968/x-twt-cli/internal/app/httpclient"
+	searchoperation "github.com/ach968/x-twt-cli/internal/app/operations/search"
 	"github.com/ach968/x-twt-cli/internal/app/state"
 )
 
@@ -30,14 +30,14 @@ func newLazyClient(initialize clientLoader) *lazyClient {
 	return &lazyClient{initialize: initialize}
 }
 
-func (client *lazyClient) SearchTimeline(ctx context.Context, query string, overrides map[string]any) (app.OperationResult, error) {
+func (client *lazyClient) Execute(ctx context.Context, request searchoperation.Request) (searchoperation.Page, error) {
 	client.once.Do(func() {
 		client.client, client.err = client.initialize(ctx)
 	})
 	if client.err != nil {
-		return app.OperationResult{}, client.err
+		return searchoperation.Page{}, client.err
 	}
-	return client.client.SearchTimeline(ctx, query, overrides)
+	return client.client.Execute(ctx, request)
 }
 
 func loadClient(ctx context.Context) (searchcommand.Requester, error) {
@@ -64,5 +64,6 @@ func loadClient(ctx context.Context) (searchcommand.Requester, error) {
 	if err != nil {
 		return nil, err
 	}
-	return httpclient.New(properties, authentication, httpclient.NewTransport(nil), generator), nil
+	requestClient := httpclient.New(properties, authentication, httpclient.NewTransport(nil), generator)
+	return searchoperation.New(searchoperation.NewDirectSource(requestClient)), nil
 }

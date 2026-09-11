@@ -109,7 +109,7 @@ func TestClientPreparesQueryOperations(t *testing.T) {
 		},
 	}
 	transactionIDs := transactionIDFunc(func(method, path string) (string, error) {
-		if method != http.MethodGet || path != "/i/api/graphql/search-id/SearchTimeline" {
+		if method != http.MethodGet || (path != "/i/api/graphql/search-id/SearchTimeline" && path != "/i/api/graphql/home-id/HomeTimeline") {
 			t.Fatalf("generated for %s %s", method, path)
 		}
 		return "generated-id", nil
@@ -117,7 +117,7 @@ func TestClientPreparesQueryOperations(t *testing.T) {
 	requestClient := New(testContracts(), app.AuthenticationState{
 		Cookies: []app.AuthenticationCookie{{Name: "auth_token", Value: "session-token"}, {Name: "ct0", Value: "csrf-token"}}, Authorization: "Bearer public-web-token",
 	}, transport, transactionIDs)
-	home, err := requestClient.HomeTimeline(context.Background(), map[string]any{"cursor": "next-page"})
+	home, err := requestClient.Execute(context.Background(), app.HomeTimeline, map[string]any{"cursor": "next-page"})
 	if err != nil || !home.OK {
 		t.Fatalf("home failed: %#v %v", home, err)
 	}
@@ -129,12 +129,12 @@ func TestClientPreparesQueryOperations(t *testing.T) {
 	}
 	wantHeaders := map[string]string{
 		"authorization": "Bearer public-web-token", "cookie": "auth_token=session-token; ct0=csrf-token", "x-csrf-token": "csrf-token",
-		"x-twitter-active-user": "yes", "x-twitter-auth-type": "OAuth2Session",
+		"x-twitter-active-user": "yes", "x-twitter-auth-type": "OAuth2Session", "x-client-transaction-id": "generated-id",
 	}
 	if !reflect.DeepEqual(homeRequest.Headers, wantHeaders) {
 		t.Fatalf("headers = %#v", homeRequest.Headers)
 	}
-	search, err := requestClient.SearchTimeline(context.Background(), "golang", map[string]any{"cursor": "page-2"})
+	search, err := requestClient.Execute(context.Background(), app.SearchTimeline, map[string]any{"rawQuery": "golang", "cursor": "page-2"})
 	if err != nil || !search.OK {
 		t.Fatalf("search failed: %#v %v", search, err)
 	}
@@ -145,6 +145,27 @@ func TestClientPreparesQueryOperations(t *testing.T) {
 	}
 	if searchRequest.Headers["x-client-transaction-id"] != "generated-id" {
 		t.Fatalf("transaction ID = %q", searchRequest.Headers["x-client-transaction-id"])
+	}
+}
+
+func TestClientExecutesCapturedOperationWithSemanticOverrides(t *testing.T) {
+	var prepared app.PreparedRequest
+	transport := successfulTransport()
+	transport.search = func(request app.PreparedRequest) (app.UpstreamResponse, error) {
+		prepared = request
+		return app.UpstreamResponse{Status: 200, Body: `{"data":{"search":true}}`}, nil
+	}
+	client := New(testContracts(), app.AuthenticationState{}, transport, transactionIDFunc(func(string, string) (string, error) { return "generated-id", nil }))
+
+	result, err := client.Execute(context.Background(), app.SearchTimeline, map[string]any{"rawQuery": "golang", "product": "Latest"})
+	if err != nil || !result.OK {
+		t.Fatalf("result = %#v, error = %v", result, err)
+	}
+	parsed, _ := url.Parse(prepared.URL)
+	var variables map[string]any
+	_ = json.Unmarshal([]byte(parsed.Query().Get("variables")), &variables)
+	if variables["rawQuery"] != "golang" || variables["product"] != "Latest" || prepared.Headers["x-client-transaction-id"] != "generated-id" {
+		t.Fatalf("prepared request = %#v", prepared)
 	}
 }
 
@@ -164,7 +185,7 @@ func TestClientPreparesJSONPostContract(t *testing.T) {
 		prepared = request
 		return app.UpstreamResponse{Status: 200, Body: `{"data":{"home":true}}`}, nil
 	}
-	result, err := New(properties, app.AuthenticationState{}, transport, nil).HomeTimeline(context.Background(), map[string]any{"cursor": "next-page"})
+	result, err := New(properties, app.AuthenticationState{}, transport, nil).Execute(context.Background(), app.HomeTimeline, map[string]any{"cursor": "next-page"})
 	if err != nil || !result.OK {
 		t.Fatalf("home failed: %#v %v", result, err)
 	}
@@ -198,7 +219,7 @@ func TestClientClassifiesAndSanitizesFailures(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			transport := successfulTransport()
 			transport.home = func(app.PreparedRequest) (app.UpstreamResponse, error) { return test.response, nil }
-			result, err := New(testContracts(), app.AuthenticationState{}, transport, nil).HomeTimeline(context.Background(), nil)
+			result, err := New(testContracts(), app.AuthenticationState{}, transport, nil).Execute(context.Background(), app.HomeTimeline, nil)
 			if err != nil || result.OK || result.Error.Code != test.code {
 				t.Fatalf("unexpected result: %#v %v", result, err)
 			}
@@ -216,7 +237,7 @@ func TestTransportErrorPropagates(t *testing.T) {
 	want := errors.New("network")
 	transport := successfulTransport()
 	transport.home = func(app.PreparedRequest) (app.UpstreamResponse, error) { return app.UpstreamResponse{}, want }
-	_, err := New(testContracts(), app.AuthenticationState{}, transport, nil).HomeTimeline(context.Background(), nil)
+	_, err := New(testContracts(), app.AuthenticationState{}, transport, nil).Execute(context.Background(), app.HomeTimeline, nil)
 	if !errors.Is(err, want) {
 		t.Fatalf("got %v", err)
 	}

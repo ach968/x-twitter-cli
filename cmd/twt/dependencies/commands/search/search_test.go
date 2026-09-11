@@ -5,26 +5,24 @@ import (
 	"errors"
 	"testing"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
 	searchcommand "github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands/search"
+	searchoperation "github.com/ach968/x-twt-cli/internal/app/operations/search"
 )
 
 type controlledSearchClient struct {
-	result    app.OperationResult
-	calls     int
-	query     string
-	overrides map[string]any
+	page    searchoperation.Page
+	calls   int
+	request searchoperation.Request
 }
 
-func (client *controlledSearchClient) SearchTimeline(_ context.Context, query string, overrides map[string]any) (app.OperationResult, error) {
+func (client *controlledSearchClient) Execute(_ context.Context, request searchoperation.Request) (searchoperation.Page, error) {
 	client.calls++
-	client.query = query
-	client.overrides = overrides
-	return client.result, nil
+	client.request = request
+	return client.page, nil
 }
 
 func TestClientDefersAndReusesInitialization(t *testing.T) {
-	client := &controlledSearchClient{result: app.OperationResult{OK: true}}
+	client := &controlledSearchClient{}
 	loads := 0
 	dependency := newLazyClient(func(context.Context) (searchcommand.Requester, error) {
 		loads++
@@ -34,18 +32,17 @@ func TestClientDefersAndReusesInitialization(t *testing.T) {
 	if loads != 0 {
 		t.Fatalf("search client loaded during runtime construction")
 	}
-	overrides := map[string]any{"product": "Latest"}
 	for range 2 {
-		result, err := dependency.SearchTimeline(context.Background(), "golang", overrides)
-		if err != nil || !result.OK {
-			t.Fatalf("SearchTimeline() result = %#v, error = %v", result, err)
+		_, err := dependency.Execute(context.Background(), searchoperation.Request{Query: "golang", Tab: searchoperation.TabLatest})
+		if err != nil {
+			t.Fatalf("Execute() error = %v", err)
 		}
 	}
 	if loads != 1 {
 		t.Fatalf("search client loads = %d, want 1", loads)
 	}
-	if client.calls != 2 || client.query != "golang" || client.overrides["product"] != "Latest" {
-		t.Fatalf("search calls = %d, query = %q, overrides = %#v", client.calls, client.query, client.overrides)
+	if client.calls != 2 || client.request.Query != "golang" || client.request.Tab != searchoperation.TabLatest {
+		t.Fatalf("search calls = %d, request = %#v", client.calls, client.request)
 	}
 }
 
@@ -58,9 +55,9 @@ func TestClientReusesInitializationFailure(t *testing.T) {
 	})
 
 	for range 2 {
-		result, err := dependency.SearchTimeline(context.Background(), "golang", nil)
-		if !errors.Is(err, want) || result != (app.OperationResult{}) {
-			t.Fatalf("SearchTimeline() result = %#v, error = %v", result, err)
+		page, err := dependency.Execute(context.Background(), searchoperation.Request{Query: "golang", Tab: searchoperation.TabTop})
+		if !errors.Is(err, want) || page.Query != "" || page.Results != nil {
+			t.Fatalf("Execute() page = %#v, error = %v", page, err)
 		}
 	}
 	if loads != 1 {

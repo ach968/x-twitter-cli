@@ -8,11 +8,11 @@ import (
 
 	app "github.com/ach968/x-twt-cli/internal/app"
 	"github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands"
-	searchresult "github.com/ach968/x-twt-cli/internal/app/search"
+	searchoperation "github.com/ach968/x-twt-cli/internal/app/operations/search"
 )
 
 type Requester interface {
-	SearchTimeline(context.Context, string, map[string]any) (app.OperationResult, error)
+	Execute(context.Context, searchoperation.Request) (searchoperation.Page, error)
 }
 
 func New(requester Requester) commands.Command {
@@ -32,30 +32,20 @@ func run(requester Requester) commands.Handler {
 		if requester == nil {
 			return commands.WriteFailure(stderr, "SEARCH_FAILED", "Unable to execute search")
 		}
-		overrides := map[string]any{"product": tab.Product()}
-		if cursor != nil {
-			overrides["cursor"] = *cursor
-		}
-		result, err := requester.SearchTimeline(ctx, query, overrides)
+		page, err := requester.Execute(ctx, searchoperation.Request{Query: query, Tab: tab, Cursor: cursor})
 		if err != nil {
-			return commands.WriteFailure(stderr, "SEARCH_FAILED", "Unable to execute search")
-		}
-		if !result.OK {
-			if result.Error == nil {
-				return commands.WriteFailure(stderr, "SEARCH_FAILED", "Unable to execute search")
+			var failure *app.OperationFailure
+			if errors.As(err, &failure) {
+				return commands.WriteJSON(stderr, failure, commands.ExitFailure)
 			}
-			return commands.WriteJSON(stderr, result.Error, commands.ExitFailure)
-		}
-		page, err := searchresult.DecodePage(result.Payload, query, tab)
-		if err != nil {
-			return commands.WriteFailure(stderr, "RESPONSE_SHAPE_CHANGED", "X returned an unrecognized SearchTimeline response")
+			return commands.WriteFailure(stderr, "SEARCH_FAILED", "Unable to execute search")
 		}
 		return commands.WriteJSON(stdout, page, commands.ExitSuccess)
 	}
 }
 
-func parseArguments(arguments []string) (string, searchresult.Tab, *string, error) {
-	tab := searchresult.TabTop
+func parseArguments(arguments []string) (string, searchoperation.Tab, *string, error) {
+	tab := searchoperation.TabTop
 	var cursor *string
 	positionals := make([]string, 0, 1)
 	for index := 0; index < len(arguments); index++ {
@@ -70,7 +60,7 @@ func parseArguments(arguments []string) (string, searchresult.Tab, *string, erro
 				}
 				value = arguments[index]
 			}
-			parsed, ok := searchresult.ParseTab(value)
+			parsed, ok := searchoperation.ParseTab(value)
 			if !ok {
 				return "", "", nil, errors.New("tab must be top, latest, people, media, or lists")
 			}

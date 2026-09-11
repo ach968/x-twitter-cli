@@ -1,0 +1,27 @@
+{
+  "query": null,
+  "bookmarks": [
+    {
+      "type": "post",
+      "id": "synthetic-post-a",
+      "url": "https://x.com/synthetic_author/status/synthetic-post-a",
+      "text": "A synthetic saved post",
+      "author": {"id": "synthetic-author-a", "name": "Synthetic Author", "username": "synthetic_author", "url": "https://x.com/synthetic_author", "avatar_url": null, "verification": null, "protected": null},
+      "created_at": null,
+      "language": null,
+      "conversation_id": "synthetic-post-a",
+      "reply_to": null,
+      "metrics": {"replies": null, "reposts": null, "quotes": null, "likes": null, "bookmarks": null, "views": null},
+      "possibly_sensitive": null,
+      "links": [],
+      "mentions": [],
+      "hashtags": [],
+      "cashtags": [],
+      "media": [],
+      "quoted_post": null,
+      "community_note": null
+    }
+  ],
+  "next_cursor": "synthetic-next-initial",
+  "warnings": []
+}

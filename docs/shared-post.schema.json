@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:x-twt-cli:schema:shared-post",
+  "title": "x-twt shared normalized post",
+  "$defs": {
+    "nullableString": { "type": ["string", "null"] },
+    "timestamp": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+    },
+    "count": { "type": ["integer", "null"], "minimum": 0 },
+    "userRef": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "username", "url", "avatar_url", "verification", "protected"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nullableString" }, "name": { "$ref": "#/$defs/nullableString" },
+        "username": { "$ref": "#/$defs/nullableString" }, "url": { "$ref": "#/$defs/nullableString" },
+        "avatar_url": { "$ref": "#/$defs/nullableString" },
+        "verification": { "enum": ["premium", "organization", "government", null] },
+        "protected": { "type": ["boolean", "null"] }
+      }
+    },
+    "link": {
+      "type": "object", "additionalProperties": false, "required": ["url", "display_url"],
+      "properties": { "url": { "type": "string" }, "display_url": { "$ref": "#/$defs/nullableString" } }
+    },
+    "replyTo": {
+      "type": "object", "additionalProperties": false, "required": ["post_id", "user_id", "username"],
+      "properties": { "post_id": { "$ref": "#/$defs/nullableString" }, "user_id": { "$ref": "#/$defs/nullableString" }, "username": { "$ref": "#/$defs/nullableString" } }
+    },
+    "metrics": {
+      "type": "object", "additionalProperties": false,
+      "required": ["replies", "reposts", "quotes", "likes", "bookmarks", "views"],
+      "properties": { "replies": { "$ref": "#/$defs/count" }, "reposts": { "$ref": "#/$defs/count" }, "quotes": { "$ref": "#/$defs/count" }, "likes": { "$ref": "#/$defs/count" }, "bookmarks": { "$ref": "#/$defs/count" }, "views": { "$ref": "#/$defs/count" } }
+    },
+    "media": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "type", "url", "preview_url", "width", "height", "alt_text", "duration_ms"],
+      "properties": { "id": { "type": "string" }, "type": { "enum": ["image", "video", "animated_gif"] }, "url": { "$ref": "#/$defs/nullableString" }, "preview_url": { "$ref": "#/$defs/nullableString" }, "width": { "$ref": "#/$defs/count" }, "height": { "$ref": "#/$defs/count" }, "alt_text": { "$ref": "#/$defs/nullableString" }, "duration_ms": { "$ref": "#/$defs/count" } }
+    },
+    "communityNote": {
+      "type": "object", "additionalProperties": false, "required": ["id", "text", "language", "sources", "url"],
+      "properties": { "id": { "type": "string" }, "text": { "type": "string" }, "language": { "$ref": "#/$defs/nullableString" }, "sources": { "type": "array", "items": { "$ref": "#/$defs/link" } }, "url": { "$ref": "#/$defs/nullableString" } }
+    },
+    "post": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "id", "url", "text", "author", "created_at", "language", "conversation_id", "reply_to", "metrics", "possibly_sensitive", "links", "mentions", "hashtags", "cashtags", "media", "quoted_post", "community_note"],
+      "properties": {
+        "type": { "const": "post" }, "id": { "type": "string" }, "url": { "$ref": "#/$defs/nullableString" }, "text": { "type": "string" },
+        "author": { "oneOf": [{ "$ref": "#/$defs/userRef" }, { "type": "null" }] }, "created_at": { "$ref": "#/$defs/timestamp" }, "language": { "$ref": "#/$defs/nullableString" }, "conversation_id": { "$ref": "#/$defs/nullableString" },
+        "reply_to": { "oneOf": [{ "$ref": "#/$defs/replyTo" }, { "type": "null" }] }, "metrics": { "$ref": "#/$defs/metrics" }, "possibly_sensitive": { "type": ["boolean", "null"] },
+        "links": { "type": "array", "items": { "$ref": "#/$defs/link" } }, "mentions": { "type": "array", "items": { "$ref": "#/$defs/userRef" } }, "hashtags": { "type": "array", "items": { "type": "string" } }, "cashtags": { "type": "array", "items": { "type": "string" } }, "media": { "type": "array", "items": { "$ref": "#/$defs/media" } },
+        "quoted_post": { "oneOf": [{ "$ref": "#/$defs/post" }, { "type": "null" }] }, "community_note": { "oneOf": [{ "$ref": "#/$defs/communityNote" }, { "type": "null" }] }
+      }
+    }
+  },
+  "$ref": "#/$defs/post"
+}

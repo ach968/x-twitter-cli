@@ -168,6 +168,7 @@ func (manager *Manager) capture(headless bool, timeout time.Duration) (app.Captu
 		Steps: []browser.ContractCaptureStep{
 			{URL: "https://x.com/home", WaitFor: []app.OperationName{app.HomeTimeline}},
 			{URL: "https://x.com/search?q=x&src=typed_query", WaitFor: []app.OperationName{app.SearchTimeline}},
+			{URL: "https://x.com/i/bookmarks", WaitFor: []app.OperationName{app.Bookmarks}, TriggerBookmarkSearch: true},
 		},
 	})
 }

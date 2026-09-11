@@ -1,0 +1,13 @@
+{
+  "data": {
+    "search_by_raw_query": {
+      "bookmarks_search_timeline": {
+        "timeline": {
+          "instructions": [
+            {"type": "TimelineAddEntries", "entries": [{"entryId": "bottom-empty-search", "content": {"entryType": "TimelineTimelineCursor", "cursorType": "Bottom", "value": "synthetic-empty-search-next"}}]}
+          ]
+        }
+      }
+    }
+  }
+}

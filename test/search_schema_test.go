@@ -6,22 +6,30 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ach968/x-twt-cli/internal/app/search"
+	"github.com/ach968/x-twt-cli/internal/app/operations/search"
 	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 
 func TestNormalizedSearchPagesConformToSchema(t *testing.T) {
-	schemaContents, err := os.ReadFile(filepath.Join("..", "docs", "search-timeline.schema.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var document any
-	if err := json.Unmarshal(schemaContents, &document); err != nil {
-		t.Fatal(err)
-	}
 	compiler := jsonschema.NewCompiler()
-	if err := compiler.AddResource("urn:x-twt-cli:schema:search-timeline", document); err != nil {
-		t.Fatal(err)
+	for _, resource := range []struct {
+		uri  string
+		path string
+	}{
+		{uri: "urn:x-twt-cli:schema:shared-post", path: filepath.Join("..", "docs", "shared-post.schema.json")},
+		{uri: "urn:x-twt-cli:schema:search-timeline", path: filepath.Join("..", "docs", "search-timeline.schema.json")},
+	} {
+		schemaContents, err := os.ReadFile(resource.path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var document any
+		if err := json.Unmarshal(schemaContents, &document); err != nil {
+			t.Fatal(err)
+		}
+		if err := compiler.AddResource(resource.uri, document); err != nil {
+			t.Fatal(err)
+		}
 	}
 	contract, err := compiler.Compile("urn:x-twt-cli:schema:search-timeline")
 	if err != nil {
@@ -40,9 +48,9 @@ func TestNormalizedSearchPagesConformToSchema(t *testing.T) {
 		{name: "later page", path: filepath.Join("testdata", "search-timeline", "populated-page-2.json"), query: "page two", tab: search.TabLatest},
 		{name: "people", path: filepath.Join("testdata", "search-timeline", "people-results.json"), query: "example people", tab: search.TabPeople},
 		{name: "parody fan", path: filepath.Join("testdata", "search-timeline", "people-pcf-results.json"), query: "account labels", tab: search.TabPeople},
-		{name: "lists", path: filepath.Join("..", "internal", "app", "search", "testdata", "lists-source.json"), query: "golang", tab: search.TabLists, listModule: true},
-		{name: "media", path: filepath.Join("..", "internal", "app", "search", "testdata", "media-source.json"), query: "cats", tab: search.TabMedia},
-		{name: "quotes and notes", path: filepath.Join("..", "internal", "app", "search", "testdata", "quotes-notes-source.json"), query: "context", tab: search.TabTop},
+		{name: "lists", path: filepath.Join("..", "internal", "app", "operations", "search", "testdata", "lists-source.json"), query: "golang", tab: search.TabLists, listModule: true},
+		{name: "media", path: filepath.Join("..", "internal", "app", "operations", "search", "testdata", "media-source.json"), query: "cats", tab: search.TabMedia},
+		{name: "quotes and notes", path: filepath.Join("..", "internal", "app", "operations", "search", "testdata", "quotes-notes-source.json"), query: "context", tab: search.TabTop},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

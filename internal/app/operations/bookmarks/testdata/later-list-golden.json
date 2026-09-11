@@ -1,0 +1,13 @@
+{
+  "query": null,
+  "bookmarks": [
+    {
+      "type": "post", "id": "synthetic-post-b", "url": null, "text": "A later synthetic saved post", "author": null,
+      "created_at": null, "language": null, "conversation_id": null, "reply_to": null,
+      "metrics": {"replies": null, "reposts": null, "quotes": null, "likes": null, "bookmarks": null, "views": null},
+      "possibly_sensitive": null, "links": [], "mentions": [], "hashtags": [], "cashtags": [], "media": [], "quoted_post": null, "community_note": null
+    }
+  ],
+  "next_cursor": "synthetic-next-later",
+  "warnings": []
+}

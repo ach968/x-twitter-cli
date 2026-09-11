@@ -1,0 +1,27 @@
+{
+  "query": null,
+  "bookmarks": [
+    {
+      "type": "post", "id": "synthetic-root", "url": null, "text": "Synthetic root context", "author": null,
+      "created_at": null, "language": null, "conversation_id": "synthetic-thread", "reply_to": null,
+      "metrics": {"replies": null, "reposts": null, "quotes": null, "likes": null, "bookmarks": null, "views": null},
+      "possibly_sensitive": null, "links": [], "mentions": [], "hashtags": [], "cashtags": [], "media": [],
+      "quoted_post": {
+        "type": "post", "id": "synthetic-quote", "url": null, "text": "Synthetic quoted context", "author": null,
+        "created_at": null, "language": null, "conversation_id": null, "reply_to": null,
+        "metrics": {"replies": null, "reposts": null, "quotes": null, "likes": null, "bookmarks": null, "views": null},
+        "possibly_sensitive": null, "links": [], "mentions": [], "hashtags": [], "cashtags": [], "media": [],
+        "quoted_post": {
+          "type": "post", "id": "synthetic-nested-quote", "url": null, "text": "Synthetic nested context", "author": null,
+          "created_at": null, "language": null, "conversation_id": null, "reply_to": null,
+          "metrics": {"replies": null, "reposts": null, "quotes": null, "likes": null, "bookmarks": null, "views": null},
+          "possibly_sensitive": null, "links": [], "mentions": [], "hashtags": [], "cashtags": [], "media": [], "quoted_post": null, "community_note": null
+        },
+        "community_note": null
+      },
+      "community_note": null
+    }
+  ],
+  "next_cursor": "synthetic-context-next",
+  "warnings": []
+}

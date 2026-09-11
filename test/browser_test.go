@@ -23,8 +23,10 @@ import (
 )
 
 type transportFunc struct {
-	home   func(app.PreparedRequest) (app.UpstreamResponse, error)
-	search func(app.PreparedRequest) (app.UpstreamResponse, error)
+	home           func(app.PreparedRequest) (app.UpstreamResponse, error)
+	search         func(app.PreparedRequest) (app.UpstreamResponse, error)
+	bookmarks      func(app.PreparedRequest) (app.UpstreamResponse, error)
+	bookmarkSearch func(app.PreparedRequest) (app.UpstreamResponse, error)
 }
 
 type transactionIDFunc func(method, path string) (string, error)
@@ -39,6 +41,10 @@ func (transport transportFunc) Execute(_ context.Context, operation app.Operatio
 		return transport.home(request)
 	case app.SearchTimeline:
 		return transport.search(request)
+	case app.Bookmarks:
+		return transport.bookmarks(request)
+	case app.BookmarkSearchTimeline:
+		return transport.bookmarkSearch(request)
 	default:
 		return app.UpstreamResponse{}, errors.New("unsupported operation")
 	}
@@ -47,8 +53,10 @@ func (transport transportFunc) Execute(_ context.Context, operation app.Operatio
 func successfulTestTransport() transportFunc {
 	success := app.UpstreamResponse{Status: 200, Body: `{"data":{"ok":true}}`}
 	return transportFunc{
-		home:   func(app.PreparedRequest) (app.UpstreamResponse, error) { return success, nil },
-		search: func(app.PreparedRequest) (app.UpstreamResponse, error) { return success, nil },
+		home:           func(app.PreparedRequest) (app.UpstreamResponse, error) { return success, nil },
+		search:         func(app.PreparedRequest) (app.UpstreamResponse, error) { return success, nil },
+		bookmarks:      func(app.PreparedRequest) (app.UpstreamResponse, error) { return success, nil },
+		bookmarkSearch: func(app.PreparedRequest) (app.UpstreamResponse, error) { return success, nil },
 	}
 }
 
@@ -61,6 +69,14 @@ func testContracts() app.ContractProperties {
 		app.SearchTimeline: {
 			Family: "graphql", Host: "x.com", Path: "/i/api/graphql/search-id/SearchTimeline", Method: "GET", Encoding: "query",
 			Variables: map[string]any{"count": float64(20), "querySource": "typed_query"}, Features: map[string]any{}, FieldToggles: map[string]any{},
+		},
+		app.Bookmarks: {
+			Family: "graphql", Host: "x.com", Path: "/i/api/graphql/bookmarks-id/Bookmarks", Method: "GET", Encoding: "query",
+			Variables: map[string]any{"count": float64(20)}, Features: map[string]any{}, FieldToggles: map[string]any{},
+		},
+		app.BookmarkSearchTimeline: {
+			Family: "graphql", Host: "x.com", Path: "/i/api/graphql/bookmark-search-id/BookmarkSearchTimeline", Method: "GET", Encoding: "query",
+			Variables: map[string]any{"count": float64(20)}, Features: map[string]any{}, FieldToggles: map[string]any{},
 		},
 	}}
 }
@@ -146,6 +162,8 @@ func graphQLPath(id string, operation app.OperationName, variables map[string]an
 func TestOperationContractCapture(t *testing.T) {
 	homePath := graphQLPath("home-id", app.HomeTimeline, map[string]any{"count": 20, "requestContext": "launch"})
 	searchPath := graphQLPath("search-id", app.SearchTimeline, map[string]any{"count": 20, "rawQuery": "x"})
+	bookmarksPath := graphQLPath("bookmarks-id", app.Bookmarks, map[string]any{"count": 20})
+	bookmarkSearchPath := graphQLPath("bookmark-search-id", app.BookmarkSearchTimeline, map[string]any{"count": 20, "rawQuery": "x-twt-contract-validation-improbable-6d1e2f"})
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/html")
 		switch request.URL.Path {
@@ -157,6 +175,8 @@ func TestOperationContractCapture(t *testing.T) {
 			fmt.Fprintf(response, `<script>fetch(%s,{headers:{authorization:"Bearer captured-token"}})</script>`, strconv.Quote(homePath))
 		case "/search":
 			fmt.Fprintf(response, `<script>fetch(%s,{headers:{authorization:"Bearer captured-token"}})</script>`, strconv.Quote(searchPath))
+		case "/bookmarks":
+			fmt.Fprintf(response, `<input placeholder="Search Bookmarks" oninput='fetch(%s,{headers:{authorization:"Bearer captured-token"}})'><script>fetch(%s,{headers:{authorization:"Bearer captured-token"}})</script>`, strconv.Quote(bookmarkSearchPath), strconv.Quote(bookmarksPath))
 		default:
 			response.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(response, `{"data":{"ok":true}}`)
@@ -165,7 +185,8 @@ func TestOperationContractCapture(t *testing.T) {
 	defer server.Close()
 	host := strings.Split(strings.TrimPrefix(server.URL, "http://"), ":")[0]
 	capture, err := browser.CaptureOperationContracts(browser.ContractCaptureOptions{
-		ProfilePath: filepath.Join(t.TempDir(), "profile"), Headless: true, URLs: []string{server.URL + "/capture"}, CaptureHost: host,
+		ProfilePath: filepath.Join(t.TempDir(), "profile"), Headless: true, CaptureHost: host,
+		Steps: []browser.ContractCaptureStep{{URL: server.URL + "/capture", WaitFor: []app.OperationName{app.HomeTimeline, app.SearchTimeline}}, {URL: server.URL + "/bookmarks", WaitFor: []app.OperationName{app.Bookmarks}, TriggerBookmarkSearch: true}},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -181,15 +202,17 @@ func TestOperationContractCapture(t *testing.T) {
 
 	stepped, err := browser.CaptureOperationContracts(browser.ContractCaptureOptions{
 		ProfilePath: filepath.Join(t.TempDir(), "profile"), Headless: true, CaptureHost: host,
-		Steps: []browser.ContractCaptureStep{{URL: server.URL + "/home", WaitFor: []app.OperationName{app.HomeTimeline}}, {URL: server.URL + "/search", WaitFor: []app.OperationName{app.SearchTimeline}}},
+		Steps: []browser.ContractCaptureStep{{URL: server.URL + "/capture", WaitFor: []app.OperationName{app.HomeTimeline, app.SearchTimeline}}, {URL: server.URL + "/bookmarks", WaitFor: []app.OperationName{app.Bookmarks}, TriggerBookmarkSearch: true}},
 	})
-	if err != nil || len(stepped.Contracts.Operations) != 2 {
+	if err != nil || len(stepped.Contracts.Operations) != 4 {
 		t.Fatalf("stepped capture: %#v %v", stepped, err)
 	}
 }
 
 func TestOperationContractCapturePreservesJSONPostBody(t *testing.T) {
 	searchPath := graphQLPath("search-id", app.SearchTimeline, map[string]any{"count": 20, "rawQuery": "x"})
+	bookmarksPath := graphQLPath("bookmarks-id", app.Bookmarks, map[string]any{"count": 20})
+	bookmarkSearchPath := graphQLPath("bookmark-search-id", app.BookmarkSearchTimeline, map[string]any{"count": 20, "rawQuery": "validation"})
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/html")
 		if request.URL.Path == "/capture" {
@@ -199,8 +222,10 @@ func TestOperationContractCapturePreservesJSONPostBody(t *testing.T) {
 					headers: {authorization: "Bearer captured-token", "content-type": "application/json"},
 					body: JSON.stringify({queryId:"home-id",variables:{count:20,includePromotedContent:true},features:{timeline_enabled:true}})
 				}),
+				fetch(%s,{headers:{authorization:"Bearer captured-token"}}),
+				fetch(%s,{headers:{authorization:"Bearer captured-token"}}),
 				fetch(%s,{headers:{authorization:"Bearer captured-token"}})
-			])</script>`, strconv.Quote(searchPath))
+			])</script>`, strconv.Quote(searchPath), strconv.Quote(bookmarksPath), strconv.Quote(bookmarkSearchPath))
 			return
 		}
 		response.Header().Set("Content-Type", "application/json")
@@ -222,6 +247,33 @@ func TestOperationContractCapturePreservesJSONPostBody(t *testing.T) {
 	variables, _ := home.Body["variables"].(map[string]any)
 	if home.Encoding != "json" || home.Body["queryId"] != "home-id" || variables["includePromotedContent"] != true {
 		t.Fatalf("JSON POST body was not captured: %#v", home)
+	}
+}
+
+func TestOperationContractCaptureRejectsAPartialRequiredSet(t *testing.T) {
+	homePath := graphQLPath("home-id", app.HomeTimeline, map[string]any{"count": 20})
+	searchPath := graphQLPath("search-id", app.SearchTimeline, map[string]any{"count": 20, "rawQuery": "x"})
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		response.Header().Set("Content-Type", "text/html")
+		if request.URL.Path == "/capture" {
+			fmt.Fprintf(response, `<script>Promise.all([fetch(%s,{headers:{authorization:"Bearer captured-token"}}),fetch(%s,{headers:{authorization:"Bearer captured-token"}})])</script>`, strconv.Quote(homePath), strconv.Quote(searchPath))
+			return
+		}
+		response.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(response, `{"data":{"ok":true}}`)
+	}))
+	defer server.Close()
+	host := strings.Split(strings.TrimPrefix(server.URL, "http://"), ":")[0]
+
+	_, err := browser.CaptureOperationContracts(browser.ContractCaptureOptions{
+		ProfilePath: filepath.Join(t.TempDir(), "profile"),
+		Headless:    true,
+		URLs:        []string{server.URL + "/capture"},
+		CaptureHost: host,
+		Timeout:     500 * time.Millisecond,
+	})
+	if err == nil || !strings.Contains(err.Error(), "Bookmarks") {
+		t.Fatalf("expected missing required bookmark operations, got %v", err)
 	}
 }
 
@@ -262,7 +314,7 @@ func TestBrowserTransportRoutesOnlySearchThroughThePage(t *testing.T) {
 		return "generated-for-operation", nil
 	})
 	requestClient := httpclient.New(testContracts(), app.AuthenticationState{}, transport, transactionIDs)
-	home, err := requestClient.HomeTimeline(context.Background(), nil)
+	home, err := requestClient.Execute(context.Background(), app.HomeTimeline, nil)
 	if err != nil || !home.OK {
 		t.Fatalf("home: %#v %v", home, err)
 	}
@@ -270,7 +322,7 @@ func TestBrowserTransportRoutesOnlySearchThroughThePage(t *testing.T) {
 	if !strings.Contains(string(homePayload), `"source":"direct"`) {
 		t.Fatalf("home did not use direct HTTP: %s", homePayload)
 	}
-	search, err := requestClient.SearchTimeline(context.Background(), "golang", nil)
+	search, err := requestClient.Execute(context.Background(), app.SearchTimeline, map[string]any{"rawQuery": "golang", "product": "Top"})
 	if err != nil || !search.OK {
 		t.Fatalf("search: %#v %v", search, err)
 	}

@@ -79,6 +79,7 @@ func TestHelpIsHumanReadableAndSuccessful(t *testing.T) {
 	for _, arguments := range [][]string{
 		{}, {"help"}, {"--help"},
 		{"search", "--help"}, {"help", "search"},
+		{"bookmarks", "--help"}, {"help", "bookmarks"},
 		{"setup", "--help"}, {"help", "setup"},
 		{"auth", "--help"}, {"auth", "login", "--help"}, {"help", "auth"},
 		{"contract", "--help"}, {"contract", "refresh", "--help"}, {"contract", "status", "--help"}, {"help", "contract"},

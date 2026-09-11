@@ -3,8 +3,10 @@
 Status: accepted design contract, consolidated into the ready-for-agent
 SearchTimeline specification.
 
-The exact required fields and nullability are machine-readable in
-[`search-timeline.schema.json`](./search-timeline.schema.json).
+The page fields are machine-readable in
+[`search-timeline.schema.json`](./search-timeline.schema.json). The shared
+post fields and nullability are defined once in
+[`shared-post.schema.json`](./shared-post.schema.json).
 
 This document defines the successful JSON output of `twt search`. It is a
 stable caller contract; X's timeline instructions, modules, entry types,
@@ -42,6 +44,9 @@ A result is a flat discriminated object. Its `type` is `post`, `user`, or
 `list`. Fields belonging to the other variants are absent.
 
 ### Post result
+
+This result uses the [shared normalized post contract](./shared-post-contract.md).
+The example is illustrative; the shared contract is authoritative.
 
 ```json
 {

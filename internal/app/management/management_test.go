@@ -50,6 +50,14 @@ func capturedState() app.CapturedState {
 				Family: "graphql", Host: "x.com", Path: "/i/api/graphql/search/SearchTimeline", Method: "GET", Encoding: "query",
 				Variables: map[string]any{}, Features: map[string]any{}, FieldToggles: map[string]any{},
 			},
+			app.Bookmarks: {
+				Family: "graphql", Host: "x.com", Path: "/i/api/graphql/bookmarks/Bookmarks", Method: "GET", Encoding: "query",
+				Variables: map[string]any{}, Features: map[string]any{}, FieldToggles: map[string]any{},
+			},
+			app.BookmarkSearchTimeline: {
+				Family: "graphql", Host: "x.com", Path: "/i/api/graphql/bookmark-search/BookmarkSearchTimeline", Method: "GET", Encoding: "query",
+				Variables: map[string]any{}, Features: map[string]any{}, FieldToggles: map[string]any{},
+			},
 		},
 		},
 		Authentication: app.AuthenticationState{
@@ -72,6 +80,9 @@ func TestLoginCapturesPersistsAndActivatesState(t *testing.T) {
 		captureCalls++
 		if !options.Headless || options.ProfilePath != paths.ProfilePath {
 			t.Fatalf("capture options = %#v", options)
+		}
+		if len(options.Steps) != 3 || options.Steps[2].URL != "https://x.com/i/bookmarks" || !options.Steps[2].TriggerBookmarkSearch {
+			t.Fatalf("bookmark capture recipe = %#v", options.Steps)
 		}
 		return capturedState(), nil
 	}

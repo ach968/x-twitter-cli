@@ -21,15 +21,20 @@ func ValidateAndActivateCandidate(ctx context.Context, candidatePath, activePath
 		return ContractActivationResult{}, err
 	}
 	requestClient := httpclient.New(properties, authentication, transport, transactionIDs)
-	home, err := requestClient.HomeTimeline(ctx, nil)
-	if err != nil {
-		return ContractActivationResult{}, err
+	requests := []struct {
+		operation app.OperationName
+		overrides map[string]any
+	}{
+		{operation: app.HomeTimeline},
+		{operation: app.SearchTimeline, overrides: map[string]any{"rawQuery": "x", "product": "Top"}},
+		{operation: app.Bookmarks},
+		{operation: app.BookmarkSearchTimeline, overrides: map[string]any{"rawQuery": "x-twt-contract-validation-improbable-6d1e2f"}},
 	}
-	search, err := requestClient.SearchTimeline(ctx, "x", nil)
-	if err != nil {
-		return ContractActivationResult{}, err
-	}
-	for _, result := range []app.OperationResult{home, search} {
+	for _, request := range requests {
+		result, err := requestClient.Execute(ctx, request.operation, request.overrides)
+		if err != nil {
+			return ContractActivationResult{}, err
+		}
 		if !result.OK {
 			return ContractActivationResult{Activated: false, Failure: result.Error, Upstream: result.Upstream}, nil
 		}

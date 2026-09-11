@@ -10,12 +10,15 @@ import (
 	"time"
 
 	app "github.com/ach968/x-twt-cli/internal/app"
+	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/input"
 	"github.com/go-rod/rod/lib/proto"
 )
 
 type ContractCaptureStep struct {
-	URL     string
-	WaitFor []app.OperationName
+	URL                   string
+	WaitFor               []app.OperationName
+	TriggerBookmarkSearch bool
 }
 
 type ContractCaptureOptions struct {
@@ -26,6 +29,10 @@ type ContractCaptureOptions struct {
 	CaptureHost string
 	Timeout     time.Duration
 }
+
+// bookmarkSearchValidationQuery is deliberately improbable so contract refresh
+// proves request execution without relying on private bookmark content.
+const bookmarkSearchValidationQuery = "x-twt-contract-validation-improbable-6d1e2f"
 
 type AuthenticationRequiredError struct {
 	URL string
@@ -84,7 +91,7 @@ func captureOperation(request *proto.NetworkRequest) (*capturedOperationResult, 
 		return nil, nil
 	}
 	name := app.OperationName(parts[4])
-	if name != app.HomeTimeline && name != app.SearchTimeline {
+	if !requiredCaptureOperation(name) {
 		return nil, nil
 	}
 	if request.Method != "GET" && request.Method != "POST" {
@@ -132,6 +139,34 @@ func captureOperation(request *proto.NetworkRequest) (*capturedOperationResult, 
 		Family: "graphql", Host: parsed.Hostname(), Path: parsed.Path, Method: request.Method, Encoding: encoding,
 		Body: body, Variables: variables, Features: features, FieldToggles: fieldToggles,
 	}, Authorization: authorization}, nil
+}
+
+func requiredCaptureOperation(name app.OperationName) bool {
+	switch name {
+	case app.HomeTimeline, app.SearchTimeline, app.Bookmarks, app.BookmarkSearchTimeline:
+		return true
+	default:
+		return false
+	}
+}
+
+// triggerBookmarkSearch contains the X-page interaction recipe. Callers only
+// ask to capture operation contracts and never receive selectors or controls.
+func triggerBookmarkSearch(page *rod.Page) error {
+	control, err := page.Element(`input[placeholder="Search Bookmarks"]`)
+	if err != nil {
+		return fmt.Errorf("locate Search Bookmarks control: %w", err)
+	}
+	if err := control.Click(proto.InputMouseButtonLeft, 1); err != nil {
+		return fmt.Errorf("focus Search Bookmarks control: %w", err)
+	}
+	if err := control.Input(bookmarkSearchValidationQuery); err != nil {
+		return fmt.Errorf("enter bookmark-search validation query: %w", err)
+	}
+	if err := control.Type(input.Enter); err != nil {
+		return fmt.Errorf("submit bookmark-search validation query: %w", err)
+	}
+	return nil
 }
 
 func CaptureOperationContracts(options ContractCaptureOptions) (result app.CapturedState, err error) {
@@ -244,8 +279,22 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 		if err = waitForOperations(step.WaitFor); err != nil {
 			return result, err
 		}
+		if step.TriggerBookmarkSearch {
+			if err = triggerBookmarkSearch(page); err != nil {
+				return result, err
+			}
+			if err = waitForOperations([]app.OperationName{app.BookmarkSearchTimeline}); err != nil {
+				return result, err
+			}
+		}
 	}
-	if err = waitForOperations([]app.OperationName{app.HomeTimeline, app.SearchTimeline}); err != nil {
+	requiredNames := []app.OperationName{
+		app.HomeTimeline,
+		app.SearchTimeline,
+		app.Bookmarks,
+		app.BookmarkSearchTimeline,
+	}
+	if err = waitForOperations(requiredNames); err != nil {
 		return result, err
 	}
 	mutex.Lock()
@@ -261,8 +310,12 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 	for i, cookie := range cookies {
 		authCookies[i] = app.AuthenticationCookie{Name: cookie.Name, Value: cookie.Value}
 	}
+	capturedContracts := make(map[app.OperationName]app.OperationContract, len(requiredNames))
+	for _, name := range requiredNames {
+		capturedContracts[name] = operations[name]
+	}
 	return app.CapturedState{
-		Contracts:      app.ContractProperties{Version: 1, Operations: map[app.OperationName]app.OperationContract{app.HomeTimeline: operations[app.HomeTimeline], app.SearchTimeline: operations[app.SearchTimeline]}},
+		Contracts:      app.ContractProperties{Version: 1, Operations: capturedContracts},
 		Authentication: app.AuthenticationState{Cookies: authCookies, Authorization: authorization},
 	}, nil
 }

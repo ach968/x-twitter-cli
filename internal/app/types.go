@@ -5,8 +5,10 @@ import "context"
 type OperationName string
 
 const (
-	HomeTimeline   OperationName = "HomeTimeline"
-	SearchTimeline OperationName = "SearchTimeline"
+	HomeTimeline           OperationName = "HomeTimeline"
+	SearchTimeline         OperationName = "SearchTimeline"
+	Bookmarks              OperationName = "Bookmarks"
+	BookmarkSearchTimeline OperationName = "BookmarkSearchTimeline"
 )
 
 type OperationContract struct {
@@ -58,6 +60,13 @@ type OperationFailure struct {
 	Code            string `json:"code"`
 	Message         string `json:"message"`
 	RecoveryCommand string `json:"recoveryCommand,omitempty"`
+}
+
+func (failure *OperationFailure) Error() string {
+	if failure == nil {
+		return ""
+	}
+	return failure.Code + ": " + failure.Message
 }
 
 type OperationResult struct {

@@ -1,6 +1,7 @@
 package contracts
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,7 +11,12 @@ import (
 	app "github.com/ach968/x-twt-cli/internal/app"
 )
 
-var requiredOperations = []app.OperationName{app.HomeTimeline, app.SearchTimeline}
+var requiredOperations = []app.OperationName{
+	app.HomeTimeline,
+	app.SearchTimeline,
+	app.Bookmarks,
+	app.BookmarkSearchTimeline,
+}
 
 type ContractPropertiesError struct {
 	Code    string
@@ -42,6 +48,40 @@ func validateOperation(operation app.OperationContract) bool {
 		operation.Variables != nil && operation.Features != nil && operation.FieldToggles != nil
 }
 
+func decodeOperationObject(contents []byte) (map[string]json.RawMessage, error) {
+	decoder := json.NewDecoder(bytes.NewReader(contents))
+	token, err := decoder.Token()
+	if err != nil {
+		return nil, err
+	}
+	if delimiter, ok := token.(json.Delim); !ok || delimiter != '{' {
+		return nil, errors.New("operations must be an object")
+	}
+	operations := map[string]json.RawMessage{}
+	for decoder.More() {
+		name, err := decoder.Token()
+		if err != nil {
+			return nil, err
+		}
+		key, ok := name.(string)
+		if !ok {
+			return nil, errors.New("operation name must be a string")
+		}
+		if _, duplicate := operations[key]; duplicate {
+			return nil, errors.New("duplicate operation name")
+		}
+		var contract json.RawMessage
+		if err := decoder.Decode(&contract); err != nil {
+			return nil, err
+		}
+		operations[key] = contract
+	}
+	if _, err := decoder.Token(); err != nil {
+		return nil, err
+	}
+	return operations, nil
+}
+
 func Load(path string) (app.ContractProperties, error) {
 	contents, err := os.ReadFile(path)
 	if err != nil {
@@ -64,8 +104,8 @@ func Load(path string) (app.ContractProperties, error) {
 		)
 	}
 
-	var operationRaw map[string]json.RawMessage
-	if err := json.Unmarshal(raw["operations"], &operationRaw); err != nil || operationRaw == nil {
+	operationRaw, err := decodeOperationObject(raw["operations"])
+	if err != nil || operationRaw == nil {
 		return app.ContractProperties{}, newContractPropertiesError("Operations must be an object")
 	}
 	if len(operationRaw) != len(requiredOperations) {

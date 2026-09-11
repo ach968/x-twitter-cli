@@ -1,0 +1,13 @@
+{
+  "query": "synthetic query",
+  "bookmarks": [
+    {
+      "type": "post", "id": "synthetic-search-post", "url": null, "text": "A query-matched synthetic post", "author": null,
+      "created_at": null, "language": null, "conversation_id": null, "reply_to": null,
+      "metrics": {"replies": null, "reposts": null, "quotes": null, "likes": null, "bookmarks": null, "views": null},
+      "possibly_sensitive": null, "links": [], "mentions": [], "hashtags": [], "cashtags": [], "media": [], "quoted_post": null, "community_note": null
+    }
+  ],
+  "next_cursor": "synthetic-search-next",
+  "warnings": []
+}

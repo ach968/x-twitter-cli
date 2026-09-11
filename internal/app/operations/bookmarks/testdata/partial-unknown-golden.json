@@ -1,0 +1,13 @@
+{
+  "query": null,
+  "bookmarks": [
+    {
+      "type": "post", "id": "synthetic-known", "url": null, "text": "A usable synthetic post", "author": null,
+      "created_at": null, "language": null, "conversation_id": null, "reply_to": null,
+      "metrics": {"replies": null, "reposts": null, "quotes": null, "likes": null, "bookmarks": null, "views": null},
+      "possibly_sensitive": null, "links": [], "mentions": [], "hashtags": [], "cashtags": [], "media": [], "quoted_post": null, "community_note": null
+    }
+  ],
+  "next_cursor": "synthetic-partial-next",
+  "warnings": [{"code": "UNKNOWN_BOOKMARK_ENTRY", "message": "Skipped an unsupported bookmark entry"}]
+}
