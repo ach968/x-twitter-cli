@@ -1,6 +1,6 @@
 # SearchTimeline CLI and Normalization
 
-Status: ready-for-agent
+Status: resolved
 
 ## Problem Statement
 
