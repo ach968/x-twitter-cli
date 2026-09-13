@@ -1,6 +1,8 @@
 # Issue tracker: Local Markdown
 
 Issues and specs for this repo live as Markdown files in `.scratch/`.
+The `.scratch/.sandbox/` directory is reserved for disposable experimental
+helpers and is not part of the issue tracker.
 
 ## Conventions
 

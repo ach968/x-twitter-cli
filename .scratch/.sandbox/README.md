@@ -35,5 +35,6 @@ go run ./inspectx 'https://x.com/jemelehill/status/2095005406548341158'
 ```
 
 It prints a local DevTools URL for an inspection client and remains open until
-interrupted. Run it from the repository root as `go run ./sandbox/inspectx ...`,
-or use the shorter command above from this directory.
+interrupted. Run it from the repository root as
+`go run ./.scratch/.sandbox/inspectx ...`, or use the shorter command above
+from this directory.

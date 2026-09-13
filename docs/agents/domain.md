@@ -23,6 +23,7 @@ If either location does not exist, proceed without flagging its absence. Domain 
 ├── docs/
 │   └── adr/
 └── .scratch/
+    └── .sandbox/
 ```
 
 ## Use canonical vocabulary

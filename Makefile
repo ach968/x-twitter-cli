@@ -1,6 +1,7 @@
 GO ?= go
 BINARY ?= twt
 CHROMIUM ?= /usr/bin/chromium
+SANDBOX_PACKAGES ?= ./.scratch/.sandbox/inspectx
 
 .DEFAULT_GOAL := help
 
@@ -19,10 +20,10 @@ auth-browser: ## Temporarily open the persisted application profile for interact
 	$(CHROMIUM) --user-data-dir="$$HOME/.local/state/x-twitter-cli/chromium-profile" https://x.com/home
 
 test: ## Run deterministic unit tests.
-	$(GO) test -v ./...
+	$(GO) test -v ./... $(SANDBOX_PACKAGES)
 
 test-race: ## Run deterministic unit tests with the race detector.
-	$(GO) test -race -v ./...
+	$(GO) test -race -v ./... $(SANDBOX_PACKAGES)
 
 test-browser: ## Run local Chromium integration tests.
 	TWT_CHROMIUM_EXECUTABLE="$(CHROMIUM)" $(GO) test -v -tags=browser -count=1 ./...
@@ -44,7 +45,7 @@ fmt-check: ## Fail if any Go source needs formatting.
 	@test -z "$$(gofmt -l $$(find . -type f -name '*.go' -not -path './vendor/*'))"
 
 vet: ## Run Go's static analyzer.
-	$(GO) vet ./...
+	$(GO) vet ./... $(SANDBOX_PACKAGES)
 
 check: fmt-check vet test-race ## Run the deterministic pre-commit checks.
 

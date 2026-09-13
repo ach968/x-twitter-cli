@@ -195,7 +195,8 @@ internal/app/state/       XDG paths and persisted state
 internal/app/workflow/    candidate validation and activation
 test/                     schemas, browser integration, and live test seams
 docs/                     output contracts, design history, and agent guidance
-.scratch/                 completed local specifications and issue records
+.scratch/                 local specifications, issues, and disposable experiments
+.scratch/.sandbox/        experimental helpers outside the public CLI surface
 ```
 
 Run deterministic release checks:
