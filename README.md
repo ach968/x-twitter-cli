@@ -30,7 +30,7 @@ End users need:
   revision managed by the project's browser library after asking for
   confirmation; a preinstalled system browser is not required or reused.
 
-> [!IMPORTANT]
+> [!NOTE]
 > **No X developer API key is required.** `x-twitter-cli` authenticates through
 > the user's own isolated X browser session; it does not use the official X API
 > or require a developer account.
