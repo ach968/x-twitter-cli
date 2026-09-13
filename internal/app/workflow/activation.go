@@ -4,9 +4,9 @@ import (
 	"context"
 	"os"
 
-	app "github.com/ach968/x-twitter-cli3/internal/app"
-	"github.com/ach968/x-twitter-cli3/internal/app/contracts"
-	"github.com/ach968/x-twitter-cli3/internal/app/httpclient"
+	app "github.com/ach968/x-twitter-cli/internal/app"
+	"github.com/ach968/x-twitter-cli/internal/app/contracts"
+	"github.com/ach968/x-twitter-cli/internal/app/httpclient"
 )
 
 type ContractActivationResult struct {
@@ -27,7 +27,7 @@ func ValidateAndActivateCandidate(ctx context.Context, candidatePath, activePath
 	}{
 		{operation: app.SearchTimeline, overrides: map[string]any{"rawQuery": "x", "product": "Top"}},
 		{operation: app.Bookmarks},
-		{operation: app.BookmarkSearchTimeline, overrides: map[string]any{"rawQuery": "x-twitter-cli3-contract-validation-improbable-6d1e2f"}},
+		{operation: app.BookmarkSearchTimeline, overrides: map[string]any{"rawQuery": "x-twitter-cli-contract-validation-improbable-6d1e2f"}},
 	}
 	for _, request := range requests {
 		result, err := requestClient.Execute(ctx, request.operation, request.overrides)

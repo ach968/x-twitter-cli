@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ach968/x-twitter-cli3/internal/app/models"
-	"github.com/ach968/x-twitter-cli3/internal/app/operations/search"
+	"github.com/ach968/x-twitter-cli/internal/app/models"
+	"github.com/ach968/x-twitter-cli/internal/app/operations/search"
 )
 
 // The Search seam deliberately remains the behavioral proof for shared post

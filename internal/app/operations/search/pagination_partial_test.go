@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ach968/x-twitter-cli3/internal/app/operations/search"
+	"github.com/ach968/x-twitter-cli/internal/app/operations/search"
 )
 
 func TestDecodePageKeepsKnownResultsInOrderAndReturnsUsablePartialPage(t *testing.T) {

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ach968/x-twitter-cli3/internal/app/cli"
-	"github.com/ach968/x-twitter-cli3/internal/app/management"
+	"github.com/ach968/x-twitter-cli/internal/app/cli"
+	"github.com/ach968/x-twitter-cli/internal/app/management"
 )
 
 func runApplication(arguments ...string) (int, string, string) {

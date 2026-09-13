@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	app "github.com/ach968/x-twitter-cli3/internal/app"
+	app "github.com/ach968/x-twitter-cli/internal/app"
 	"github.com/go-rod/rod/lib/proto"
 )
 

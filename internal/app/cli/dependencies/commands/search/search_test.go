@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	app "github.com/ach968/x-twitter-cli3/internal/app"
-	searchcommand "github.com/ach968/x-twitter-cli3/internal/app/cli/dependencies/commands/search"
-	searchoperation "github.com/ach968/x-twitter-cli3/internal/app/operations/search"
+	app "github.com/ach968/x-twitter-cli/internal/app"
+	searchcommand "github.com/ach968/x-twitter-cli/internal/app/cli/dependencies/commands/search"
+	searchoperation "github.com/ach968/x-twitter-cli/internal/app/operations/search"
 )
 
 type controlledRequester struct {

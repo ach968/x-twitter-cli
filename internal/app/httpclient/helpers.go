@@ -5,7 +5,7 @@ import (
 	"maps"
 	"net/url"
 
-	app "github.com/ach968/x-twitter-cli3/internal/app"
+	app "github.com/ach968/x-twitter-cli/internal/app"
 )
 
 func addTransactionID(request *app.PreparedRequest, transactionIDs app.TransactionIDGenerator) error {

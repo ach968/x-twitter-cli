@@ -11,12 +11,12 @@ import (
 	"time"
 
 	transaction "github.com/ach968/x-client-transaction-id-go"
-	app "github.com/ach968/x-twitter-cli3/internal/app"
-	"github.com/ach968/x-twitter-cli3/internal/app/browser"
-	"github.com/ach968/x-twitter-cli3/internal/app/contracts"
-	"github.com/ach968/x-twitter-cli3/internal/app/httpclient"
-	"github.com/ach968/x-twitter-cli3/internal/app/operations/search"
-	"github.com/ach968/x-twitter-cli3/internal/app/state"
+	app "github.com/ach968/x-twitter-cli/internal/app"
+	"github.com/ach968/x-twitter-cli/internal/app/browser"
+	"github.com/ach968/x-twitter-cli/internal/app/contracts"
+	"github.com/ach968/x-twitter-cli/internal/app/httpclient"
+	"github.com/ach968/x-twitter-cli/internal/app/operations/search"
+	"github.com/ach968/x-twitter-cli/internal/app/state"
 )
 
 func logLiveFailure(t *testing.T, operation string, result app.OperationResult, err error) {
@@ -192,7 +192,7 @@ func TestLiveAuthenticatedProfileExecutesAllRequiredOperations(t *testing.T) {
 		}()
 		go func() {
 			started := time.Now()
-			result, err := requestClient.Execute(context.Background(), app.BookmarkSearchTimeline, map[string]any{"rawQuery": "x-twitter-cli3-contract-validation-improbable-6d1e2f"})
+			result, err := requestClient.Execute(context.Background(), app.BookmarkSearchTimeline, map[string]any{"rawQuery": "x-twitter-cli-contract-validation-improbable-6d1e2f"})
 			bookmarkSearch <- outcome{result: result, err: err, duration: time.Since(started)}
 		}()
 		searchOutcome := <-searchResults

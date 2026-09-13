@@ -1,5 +1,5 @@
 {
-  "name": "x-twitter-cli3-transaction-id-probe",
+  "name": "x-twitter-cli-transaction-id-probe",
   "private": true,
   "type": "module",
   "scripts": {

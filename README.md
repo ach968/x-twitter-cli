@@ -1,6 +1,6 @@
-# x-twitter-cli3
+# x-twitter-cli
 
-`x-twitter-cli3` is an unofficial, local, read-only command-line client for X.
+`x-twitter-cli` is an unofficial, local, read-only command-line client for X.
 The `twt` executable provides stable JSON output for public search and the
 authenticated account's bookmarks without exposing X's private response
 formats to callers.
@@ -45,7 +45,7 @@ required.
 Install the latest tagged version with Go:
 
 ```bash
-go install github.com/ach968/x-twitter-cli3/cmd/twt@latest
+go install github.com/ach968/x-twitter-cli/cmd/twt@latest
 ```
 
 Go normally writes the executable to `$(go env GOPATH)/bin`. Ensure that
@@ -59,8 +59,8 @@ twt --help
 To build the current checkout instead:
 
 ```bash
-git clone https://github.com/ach968/x-twitter-cli3.git
-cd x-twitter-cli3
+git clone https://github.com/ach968/x-twitter-cli.git
+cd x-twitter-cli
 go build -o twt ./cmd/twt
 ```
 
@@ -101,9 +101,9 @@ after validation succeeds.
 By default, sensitive and generated state is stored at:
 
 ```text
-~/.config/x-twitter-cli3/authentication.json       captured cookies and authorization
-~/.config/x-twitter-cli3/contracts.json            active non-secret request contracts
-~/.local/state/x-twitter-cli3/chromium-profile/    isolated Chromium profile
+~/.config/x-twitter-cli/authentication.json       captured cookies and authorization
+~/.config/x-twitter-cli/contracts.json            active non-secret request contracts
+~/.local/state/x-twitter-cli/chromium-profile/    isolated Chromium profile
 ```
 
 `XDG_CONFIG_HOME` and `XDG_STATE_HOME` replace the corresponding default
@@ -251,7 +251,7 @@ Run `make help` for the complete development target list. The more detailed
 
 This project is available under the [MIT License](LICENSE).
 
-`x-twitter-cli3` is not affiliated with, endorsed by, or sponsored by X Corp.
+`x-twitter-cli` is not affiliated with, endorsed by, or sponsored by X Corp.
 It uses private web operations rather than a supported public API, so it may
 stop working when X changes its site. Users are responsible for complying with
 X's terms and all rules applicable to their accounts and data.

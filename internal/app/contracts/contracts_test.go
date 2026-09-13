@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	app "github.com/ach968/x-twitter-cli3/internal/app"
+	app "github.com/ach968/x-twitter-cli/internal/app"
 )
 
 func testContracts() app.ContractProperties {

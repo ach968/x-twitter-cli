@@ -8,12 +8,12 @@ import (
 	"time"
 
 	transaction "github.com/ach968/x-client-transaction-id-go"
-	app "github.com/ach968/x-twitter-cli3/internal/app"
-	"github.com/ach968/x-twitter-cli3/internal/app/browser"
-	"github.com/ach968/x-twitter-cli3/internal/app/contracts"
-	"github.com/ach968/x-twitter-cli3/internal/app/httpclient"
-	"github.com/ach968/x-twitter-cli3/internal/app/state"
-	"github.com/ach968/x-twitter-cli3/internal/app/workflow"
+	app "github.com/ach968/x-twitter-cli/internal/app"
+	"github.com/ach968/x-twitter-cli/internal/app/browser"
+	"github.com/ach968/x-twitter-cli/internal/app/contracts"
+	"github.com/ach968/x-twitter-cli/internal/app/httpclient"
+	"github.com/ach968/x-twitter-cli/internal/app/state"
+	"github.com/ach968/x-twitter-cli/internal/app/workflow"
 )
 
 type Options struct {

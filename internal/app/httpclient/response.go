@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	app "github.com/ach968/x-twitter-cli3/internal/app"
+	app "github.com/ach968/x-twitter-cli/internal/app"
 )
 
 const maximumUpstreamBodyLength = 4096

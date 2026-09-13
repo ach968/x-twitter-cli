@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	app "github.com/ach968/x-twitter-cli3/internal/app"
-	bookmarkcommand "github.com/ach968/x-twitter-cli3/internal/app/cli/dependencies/commands/bookmarks"
-	"github.com/ach968/x-twitter-cli3/internal/app/models"
-	bookmarkoperation "github.com/ach968/x-twitter-cli3/internal/app/operations/bookmarks"
+	app "github.com/ach968/x-twitter-cli/internal/app"
+	bookmarkcommand "github.com/ach968/x-twitter-cli/internal/app/cli/dependencies/commands/bookmarks"
+	"github.com/ach968/x-twitter-cli/internal/app/models"
+	bookmarkoperation "github.com/ach968/x-twitter-cli/internal/app/operations/bookmarks"
 )
 
 type testRequester struct{}

@@ -1,6 +1,6 @@
 # SearchTimeline design interview
 
-This document contains the SearchTimeline branch of the original `x-twitter-cli3`
+This document contains the SearchTimeline branch of the original `x-twitter-cli`
 design interview. It preserves the original Q19–Q64 numbering so references in
 the specification and decision history remain stable. Recommendations were
 proposals until Matt explicitly accepted or revised them.

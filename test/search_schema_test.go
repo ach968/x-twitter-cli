@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ach968/x-twitter-cli3/internal/app/operations/search"
+	"github.com/ach968/x-twitter-cli/internal/app/operations/search"
 	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 
@@ -16,8 +16,8 @@ func TestNormalizedSearchPagesConformToSchema(t *testing.T) {
 		uri  string
 		path string
 	}{
-		{uri: "urn:x-twitter-cli3:schema:shared-post", path: filepath.Join("..", "docs", "shared-post.schema.json")},
-		{uri: "urn:x-twitter-cli3:schema:search-timeline", path: filepath.Join("..", "docs", "search-timeline.schema.json")},
+		{uri: "urn:x-twitter-cli:schema:shared-post", path: filepath.Join("..", "docs", "shared-post.schema.json")},
+		{uri: "urn:x-twitter-cli:schema:search-timeline", path: filepath.Join("..", "docs", "search-timeline.schema.json")},
 	} {
 		schemaContents, err := os.ReadFile(resource.path)
 		if err != nil {
@@ -31,7 +31,7 @@ func TestNormalizedSearchPagesConformToSchema(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	contract, err := compiler.Compile("urn:x-twitter-cli3:schema:search-timeline")
+	contract, err := compiler.Compile("urn:x-twitter-cli:schema:search-timeline")
 	if err != nil {
 		t.Fatal(err)
 	}

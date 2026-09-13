@@ -3,7 +3,7 @@ package search
 import (
 	"strings"
 
-	"github.com/ach968/x-twitter-cli3/internal/app/models"
+	"github.com/ach968/x-twitter-cli/internal/app/models"
 )
 
 type userResult struct {

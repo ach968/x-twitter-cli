@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	app "github.com/ach968/x-twitter-cli3/internal/app"
+	app "github.com/ach968/x-twitter-cli/internal/app"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/input"
 	"github.com/go-rod/rod/lib/proto"
@@ -32,7 +32,7 @@ type ContractCaptureOptions struct {
 
 // bookmarkSearchValidationQuery is deliberately improbable so contract refresh
 // proves request execution without relying on private bookmark content.
-const bookmarkSearchValidationQuery = "x-twitter-cli3-contract-validation-improbable-6d1e2f"
+const bookmarkSearchValidationQuery = "x-twitter-cli-contract-validation-improbable-6d1e2f"
 
 type AuthenticationRequiredError struct {
 	URL string

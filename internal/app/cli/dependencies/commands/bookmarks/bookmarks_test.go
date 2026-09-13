@@ -6,9 +6,9 @@ import (
 	"errors"
 	"testing"
 
-	app "github.com/ach968/x-twitter-cli3/internal/app"
-	"github.com/ach968/x-twitter-cli3/internal/app/models"
-	bookmarkoperation "github.com/ach968/x-twitter-cli3/internal/app/operations/bookmarks"
+	app "github.com/ach968/x-twitter-cli/internal/app"
+	"github.com/ach968/x-twitter-cli/internal/app/models"
+	bookmarkoperation "github.com/ach968/x-twitter-cli/internal/app/operations/bookmarks"
 )
 
 type requester struct {

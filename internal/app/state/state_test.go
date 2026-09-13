@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	app "github.com/ach968/x-twitter-cli3/internal/app"
+	app "github.com/ach968/x-twitter-cli/internal/app"
 )
 
 func TestResolvePathsAndContractSource(t *testing.T) {
 	paths := ResolvePaths("/home/user", map[string]string{"XDG_CONFIG_HOME": "/config", "XDG_STATE_HOME": "/state"})
-	if paths.ActiveContractPath != "/config/x-twitter-cli3/contracts.json" || paths.ProfilePath != "/state/x-twitter-cli3/chromium-profile" || paths.EvidenceDirectory != "/state/x-twitter-cli3/evidence" {
+	if paths.ActiveContractPath != "/config/x-twitter-cli/contracts.json" || paths.ProfilePath != "/state/x-twitter-cli/chromium-profile" || paths.EvidenceDirectory != "/state/x-twitter-cli/evidence" {
 		t.Fatalf("unexpected paths: %#v", paths)
 	}
 	if value := ResolveContractSource("/option", map[string]string{"TWT_CONTRACT_FILE": "/environment"}, paths.ActiveContractPath); value != "/option" {

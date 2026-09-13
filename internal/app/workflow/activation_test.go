@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	app "github.com/ach968/x-twitter-cli3/internal/app"
-	"github.com/ach968/x-twitter-cli3/internal/app/contracts"
+	app "github.com/ach968/x-twitter-cli/internal/app"
+	"github.com/ach968/x-twitter-cli/internal/app/contracts"
 )
 
 type transactionIDFunc func(method, path string) (string, error)
@@ -130,7 +130,7 @@ func TestValidateAndActivateCandidate(t *testing.T) {
 			t.Fatal(err)
 		}
 		var variables map[string]any
-		if err := json.Unmarshal([]byte(parsed.Query().Get("variables")), &variables); err != nil || variables["rawQuery"] != "x-twitter-cli3-contract-validation-improbable-6d1e2f" {
+		if err := json.Unmarshal([]byte(parsed.Query().Get("variables")), &variables); err != nil || variables["rawQuery"] != "x-twitter-cli-contract-validation-improbable-6d1e2f" {
 			t.Fatalf("bookmark-search validation query was not preserved: %s", request.URL)
 		}
 		return app.UpstreamResponse{Status: 403}, nil

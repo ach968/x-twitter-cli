@@ -23,10 +23,10 @@ const configDirectory =
   process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config");
 const contractsPath =
   process.env.TWT_CONTRACT_FILE ??
-  join(configDirectory, "x-twitter-cli3", "contracts.json");
+  join(configDirectory, "x-twitter-cli", "contracts.json");
 const authenticationPath = join(
   configDirectory,
-  "x-twitter-cli3",
+  "x-twitter-cli",
   "authentication.json",
 );
 const attempts = Number.parseInt(process.env.ATTEMPTS ?? "5", 10);

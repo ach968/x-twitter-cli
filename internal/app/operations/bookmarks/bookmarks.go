@@ -6,8 +6,8 @@ import (
 	"context"
 	"errors"
 
-	app "github.com/ach968/x-twitter-cli3/internal/app"
-	"github.com/ach968/x-twitter-cli3/internal/app/models"
+	app "github.com/ach968/x-twitter-cli/internal/app"
+	"github.com/ach968/x-twitter-cli/internal/app/models"
 )
 
 type Warning struct {

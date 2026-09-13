@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	app "github.com/ach968/x-twitter-cli3/internal/app"
+	app "github.com/ach968/x-twitter-cli/internal/app"
 )
 
 func copyMap(source map[string]any) map[string]any {

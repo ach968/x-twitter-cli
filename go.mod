@@ -1,4 +1,4 @@
-module github.com/ach968/x-twitter-cli3
+module github.com/ach968/x-twitter-cli
 
 go 1.26
 

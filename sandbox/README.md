@@ -4,7 +4,7 @@ Throwaway live experiment: determine whether `x-client-transaction-id` values
 can be generated outside Chromium and accepted by X for direct HTTP
 `SearchTimeline` requests.
 
-The probe reads the existing x-twitter-cli3 contract and authentication state. It never
+The probe reads the existing x-twitter-cli contract and authentication state. It never
 prints cookie values, authorization values, or full transaction IDs.
 
 Run from this directory:
@@ -28,7 +28,7 @@ algorithm or its source data at any time.
 ## Authenticated X page inspector
 
 `inspectx/` is a headed Go browser helper for inspecting an arbitrary HTTPS X
-URL with x-twitter-cli3's persisted authentication state:
+URL with x-twitter-cli's persisted authentication state:
 
 ```sh
 go run ./inspectx 'https://x.com/jemelehill/status/2095005406548341158'
