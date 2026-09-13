@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:x-twt-cli:schema:bookmarks-page",
-  "title": "x-twt Bookmarks page",
+  "$id": "urn:x-twitter-cli3:schema:bookmarks-page",
+  "title": "x-twitter-cli3 Bookmarks page",
   "type": "object",
   "additionalProperties": false,
   "required": ["query", "bookmarks", "next_cursor", "warnings"],
@@ -9,7 +9,7 @@
     "query": { "type": ["string", "null"], "minLength": 1 },
     "bookmarks": {
       "type": "array",
-      "items": { "$ref": "urn:x-twt-cli:schema:shared-post#/$defs/post" }
+      "items": { "$ref": "urn:x-twitter-cli3:schema:shared-post#/$defs/post" }
     },
     "next_cursor": { "type": ["string", "null"] },
     "warnings": {

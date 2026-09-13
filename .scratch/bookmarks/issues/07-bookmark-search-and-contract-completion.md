@@ -7,7 +7,7 @@ accepted Bookmarks contract.
 
 **Blocked by:** 06: Bookmark pagination and partial success.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Completion notes (2026-09-11):** Added `--search` command parsing, bookmark
 search source selection, combined cursor forwarding, help, schema contract,

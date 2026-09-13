@@ -6,9 +6,9 @@ import (
 	"io"
 	"strings"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
-	"github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands"
-	bookmarkoperation "github.com/ach968/x-twt-cli/internal/app/operations/bookmarks"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
+	"github.com/ach968/x-twitter-cli3/internal/app/cli/dependencies/commands"
+	bookmarkoperation "github.com/ach968/x-twitter-cli3/internal/app/operations/bookmarks"
 )
 
 type Requester interface {

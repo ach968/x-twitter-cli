@@ -6,7 +6,7 @@ without coordinating source requests or decoding source payloads themselves.
 
 **Blocked by:** 01: Shared post normalization expansion.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 Before starting, read the parent Bookmarks specification, domain glossary,
 accepted design interview, current Search contract, and ticket 01's completed

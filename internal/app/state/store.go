@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
 )
 
 func SaveCaptured(candidatePath, authenticationPath string, capture app.CapturedState) error {

@@ -8,6 +8,8 @@ Issues and specs for this repo live as Markdown files in `.scratch/`.
 - The spec is `.scratch/<feature-slug>/spec.md`
 - Implementation issues are individual files at `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01`
 - Triage state is recorded as a `Status:` line near the top of each issue file
+- Completed implementation issues use `Status: resolved`; the five triage
+  labels apply only while an issue remains open
 - Comments and conversation history are appended under a `## Comments` heading
 
 ## Publishing an issue

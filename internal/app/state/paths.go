@@ -19,8 +19,8 @@ func ResolvePaths(homeDirectory string, environment map[string]string) StatePath
 	if stateRoot == "" {
 		stateRoot = filepath.Join(homeDirectory, ".local", "state")
 	}
-	configDirectory := filepath.Join(configRoot, "x-twt")
-	stateDirectory := filepath.Join(stateRoot, "x-twt")
+	configDirectory := filepath.Join(configRoot, "x-twitter-cli3")
+	stateDirectory := filepath.Join(stateRoot, "x-twitter-cli3")
 	return StatePaths{
 		ActiveContractPath:    filepath.Join(configDirectory, "contracts.json"),
 		CandidateContractPath: filepath.Join(configDirectory, "contracts.candidate.json"),

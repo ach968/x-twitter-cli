@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ach968/x-twt-cli/internal/app/operations/search"
+	"github.com/ach968/x-twitter-cli3/internal/app/operations/search"
 )
 
 func TestDecodePageKeepsUnobservedAccountSignalsUnknown(t *testing.T) {

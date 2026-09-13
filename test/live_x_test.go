@@ -11,12 +11,12 @@ import (
 	"time"
 
 	transaction "github.com/ach968/x-client-transaction-id-go"
-	app "github.com/ach968/x-twt-cli/internal/app"
-	"github.com/ach968/x-twt-cli/internal/app/browser"
-	"github.com/ach968/x-twt-cli/internal/app/contracts"
-	"github.com/ach968/x-twt-cli/internal/app/httpclient"
-	"github.com/ach968/x-twt-cli/internal/app/operations/search"
-	"github.com/ach968/x-twt-cli/internal/app/state"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
+	"github.com/ach968/x-twitter-cli3/internal/app/browser"
+	"github.com/ach968/x-twitter-cli3/internal/app/contracts"
+	"github.com/ach968/x-twitter-cli3/internal/app/httpclient"
+	"github.com/ach968/x-twitter-cli3/internal/app/operations/search"
+	"github.com/ach968/x-twitter-cli3/internal/app/state"
 )
 
 func logLiveFailure(t *testing.T, operation string, result app.OperationResult, err error) {
@@ -141,9 +141,8 @@ func TestLiveAuthenticatedProfileExecutesAllRequiredOperations(t *testing.T) {
 			capture, err = browser.CaptureOperationContracts(browser.ContractCaptureOptions{
 				ProfilePath: paths.ProfilePath,
 				Headless:    true,
-				Timeout:     10 * time.Minute,
+				Timeout:     45 * time.Second,
 				Steps: []browser.ContractCaptureStep{
-					{URL: "https://x.com/home", WaitFor: []app.OperationName{app.HomeTimeline}},
 					{URL: "https://x.com/search?q=x&src=typed_query", WaitFor: []app.OperationName{app.SearchTimeline}},
 					{URL: "https://x.com/i/bookmarks", WaitFor: []app.OperationName{app.Bookmarks}, TriggerBookmarkSearch: true},
 				},
@@ -171,22 +170,16 @@ func TestLiveAuthenticatedProfileExecutesAllRequiredOperations(t *testing.T) {
 	}
 	// t.Logf("transaction ID generator initialized in %s", initialization.duration)
 	transport := httpclient.NewTransport(nil)
-	t.Run("four_operation_verification", func(t *testing.T) {
+	t.Run("required_operation_verification", func(t *testing.T) {
 		requestClient := httpclient.New(capture.Contracts, capture.Authentication, transport, initialization.generator)
 		type outcome struct {
 			result   app.OperationResult
 			err      error
 			duration time.Duration
 		}
-		home := make(chan outcome, 1)
 		searchResults := make(chan outcome, 1)
 		bookmarks := make(chan outcome, 1)
 		bookmarkSearch := make(chan outcome, 1)
-		go func() {
-			started := time.Now()
-			result, err := requestClient.Execute(context.Background(), app.HomeTimeline, nil)
-			home <- outcome{result: result, err: err, duration: time.Since(started)}
-		}()
 		go func() {
 			started := time.Now()
 			result, err := requestClient.Execute(context.Background(), app.SearchTimeline, map[string]any{"rawQuery": "x", "product": "Top"})
@@ -199,20 +192,12 @@ func TestLiveAuthenticatedProfileExecutesAllRequiredOperations(t *testing.T) {
 		}()
 		go func() {
 			started := time.Now()
-			result, err := requestClient.Execute(context.Background(), app.BookmarkSearchTimeline, map[string]any{"rawQuery": "x-twt-contract-validation-improbable-6d1e2f"})
+			result, err := requestClient.Execute(context.Background(), app.BookmarkSearchTimeline, map[string]any{"rawQuery": "x-twitter-cli3-contract-validation-improbable-6d1e2f"})
 			bookmarkSearch <- outcome{result: result, err: err, duration: time.Since(started)}
 		}()
-		homeOutcome := <-home
 		searchOutcome := <-searchResults
 		bookmarksOutcome := <-bookmarks
 		bookmarkSearchOutcome := <-bookmarkSearch
-		t.Run("home_timeline_over_direct_http", func(t *testing.T) {
-			// t.Logf("completed in %s", homeOutcome.duration)
-			if homeOutcome.err != nil || !homeOutcome.result.OK {
-				logLiveFailure(t, "HomeTimeline", homeOutcome.result, homeOutcome.err)
-				t.Fatal("HomeTimeline failed; see safe metadata above")
-			}
-		})
 		t.Run("search_timeline_over_direct_http", func(t *testing.T) {
 			// t.Logf("completed in %s", searchOutcome.duration)
 			if searchOutcome.err != nil || !searchOutcome.result.OK {

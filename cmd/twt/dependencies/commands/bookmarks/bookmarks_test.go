@@ -2,11 +2,14 @@ package bookmarks
 
 import (
 	"context"
+	"errors"
+	"path/filepath"
 	"testing"
 
-	bookmarkcommand "github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands/bookmarks"
-	"github.com/ach968/x-twt-cli/internal/app/models"
-	bookmarkoperation "github.com/ach968/x-twt-cli/internal/app/operations/bookmarks"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
+	bookmarkcommand "github.com/ach968/x-twitter-cli3/internal/app/cli/dependencies/commands/bookmarks"
+	"github.com/ach968/x-twitter-cli3/internal/app/models"
+	bookmarkoperation "github.com/ach968/x-twitter-cli3/internal/app/operations/bookmarks"
 )
 
 type testRequester struct{}
@@ -29,5 +32,14 @@ func TestLazyClientInitializesOnce(t *testing.T) {
 	}
 	if calls != 1 {
 		t.Fatalf("loader called %d times", calls)
+	}
+}
+
+func TestLoadClientClassifiesInvalidContractState(t *testing.T) {
+	t.Setenv("TWT_CONTRACT_FILE", filepath.Join(t.TempDir(), "missing-contracts.json"))
+	_, err := loadClient(context.Background())
+	var failure *app.OperationFailure
+	if !errors.As(err, &failure) || failure.Code != "CONTRACT_FAILED" || failure.RecoveryCommand != "twt contract refresh" {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

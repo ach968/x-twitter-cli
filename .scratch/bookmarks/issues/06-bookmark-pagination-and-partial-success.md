@@ -6,7 +6,7 @@ and failing safely when no meaningful bookmark page can be decoded.
 
 **Blocked by:** 05: All Bookmarks command.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Completion notes (2026-09-11):** Added opaque cursor forwarding, independent
 empty-page continuation, preserved source order, and safe partial-success

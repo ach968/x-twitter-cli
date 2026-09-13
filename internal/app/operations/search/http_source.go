@@ -3,7 +3,7 @@ package search
 import (
 	"context"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
 )
 
 // DirectExecutor is the generic direct-operation seam used by the production

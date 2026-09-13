@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
-	"github.com/ach968/x-twt-cli/internal/app/operations/search"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
+	"github.com/ach968/x-twitter-cli3/internal/app/operations/search"
 )
 
 type controlledSource struct {

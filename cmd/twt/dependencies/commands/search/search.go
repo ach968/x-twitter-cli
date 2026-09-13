@@ -6,11 +6,11 @@ import (
 	"sync"
 
 	transaction "github.com/ach968/x-client-transaction-id-go"
-	searchcommand "github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands/search"
-	"github.com/ach968/x-twt-cli/internal/app/contracts"
-	"github.com/ach968/x-twt-cli/internal/app/httpclient"
-	searchoperation "github.com/ach968/x-twt-cli/internal/app/operations/search"
-	"github.com/ach968/x-twt-cli/internal/app/state"
+	searchcommand "github.com/ach968/x-twitter-cli3/internal/app/cli/dependencies/commands/search"
+	"github.com/ach968/x-twitter-cli3/internal/app/contracts"
+	"github.com/ach968/x-twitter-cli3/internal/app/httpclient"
+	searchoperation "github.com/ach968/x-twitter-cli3/internal/app/operations/search"
+	"github.com/ach968/x-twitter-cli3/internal/app/state"
 )
 
 type clientLoader func(context.Context) (searchcommand.Requester, error)
@@ -54,7 +54,7 @@ func loadClient(ctx context.Context) (searchcommand.Requester, error) {
 	contractPath := state.ResolveContractSource("", environment, paths.ActiveContractPath)
 	properties, err := contracts.Load(contractPath)
 	if err != nil {
-		return nil, err
+		return nil, contracts.UnavailableFailure()
 	}
 	authentication, err := state.LoadAuthentication(paths.AuthenticationPath)
 	if err != nil {

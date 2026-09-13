@@ -3,7 +3,7 @@ package bookmarks
 import (
 	"context"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
 )
 
 type DirectExecutor interface {

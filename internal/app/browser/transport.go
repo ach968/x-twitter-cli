@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
-	"github.com/ach968/x-twt-cli/internal/app/httpclient"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
+	"github.com/ach968/x-twitter-cli3/internal/app/httpclient"
 )
 
 type BrowserTransport struct {

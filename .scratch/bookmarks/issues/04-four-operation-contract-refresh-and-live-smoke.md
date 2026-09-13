@@ -7,7 +7,12 @@ contracts, without depending on account content.
 
 **Blocked by:** 03: Shared direct-operation transport contraction.
 
-**Status:** ready-for-agent
+**Status:** resolved
+
+**V1 revision (2026-09-12):** This ticket records the original four-operation
+implementation. HomeTimeline is now optional WIP; the v1 contract, activation,
+and live gates require only SearchTimeline, Bookmarks, and
+BookmarkSearchTimeline.
 
 Before starting, read the parent Bookmarks specification, domain glossary,
 accepted design interview, Bookmarks evidence audit, and tickets 01-03's
@@ -53,3 +58,7 @@ completed notes. Treat them as authoritative.
   safe failure metadata, never authenticated response bodies.
 - Verified with deterministic `go test ./...`, browser-tag capture tests, and
   live-tag compilation/skipped tests. No authenticated live X request was run.
+
+The v1 release-readiness revision subsequently removed HomeTimeline from the
+required capture and activation set while continuing to accept and validate a
+HomeTimeline contract when one is present.

@@ -15,8 +15,8 @@ func TestBookmarksGoldenPagesConformToSchema(t *testing.T) {
 		uri  string
 		path string
 	}{
-		{uri: "urn:x-twt-cli:schema:shared-post", path: filepath.Join("..", "docs", "shared-post.schema.json")},
-		{uri: "urn:x-twt-cli:schema:bookmarks-page", path: filepath.Join("..", "docs", "bookmarks-page.schema.json")},
+		{uri: "urn:x-twitter-cli3:schema:shared-post", path: filepath.Join("..", "docs", "shared-post.schema.json")},
+		{uri: "urn:x-twitter-cli3:schema:bookmarks-page", path: filepath.Join("..", "docs", "bookmarks-page.schema.json")},
 	} {
 		contents, err := os.ReadFile(resource.path)
 		if err != nil {
@@ -30,7 +30,7 @@ func TestBookmarksGoldenPagesConformToSchema(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	contract, err := compiler.Compile("urn:x-twt-cli:schema:bookmarks-page")
+	contract, err := compiler.Compile("urn:x-twitter-cli3:schema:bookmarks-page")
 	if err != nil {
 		t.Fatal(err)
 	}

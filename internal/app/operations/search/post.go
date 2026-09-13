@@ -1,6 +1,6 @@
 package search
 
-import "github.com/ach968/x-twt-cli/internal/app/models"
+import "github.com/ach968/x-twitter-cli3/internal/app/models"
 
 // Compatibility aliases keep the established Search package usable while the
 // shared normalized post contract is introduced. New operations use models.

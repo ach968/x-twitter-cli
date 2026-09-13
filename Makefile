@@ -16,7 +16,7 @@ run: ## Run the current twt entrypoint without keeping a binary.
 	$(GO) run ./cmd/twt
 
 auth-browser: ## Temporarily open the persisted application profile for interactive login.
-	$(CHROMIUM) --user-data-dir="$$HOME/.local/state/x-twt/chromium-profile" https://x.com/home
+	$(CHROMIUM) --user-data-dir="$$HOME/.local/state/x-twitter-cli3/chromium-profile" https://x.com/home
 
 test: ## Run deterministic unit tests.
 	$(GO) test -v ./...

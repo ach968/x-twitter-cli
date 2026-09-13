@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
 )
 
 func testContracts() app.ContractProperties {
@@ -49,6 +49,20 @@ func TestLoad(t *testing.T) {
 		t.Fatal(err)
 	}
 	if loaded.Version != 1 || loaded.Operations[app.HomeTimeline].Path != "/i/api/graphql/home-id/HomeTimeline" {
+		t.Fatalf("unexpected contracts: %#v", loaded)
+	}
+}
+
+func TestLoadAcceptsRequiredOperationsWithoutOptionalHomeTimeline(t *testing.T) {
+	value := testContracts()
+	delete(value.Operations, app.HomeTimeline)
+	path := filepath.Join(t.TempDir(), "contracts.json")
+	writeContracts(t, path, value)
+	loaded, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(loaded.Operations) != 3 {
 		t.Fatalf("unexpected contracts: %#v", loaded)
 	}
 }
@@ -111,5 +125,12 @@ func TestLoadReportsUnreadableAndMalformedFiles(t *testing.T) {
 func TestDecodeOperationObjectRejectsDuplicateNames(t *testing.T) {
 	if _, err := decodeOperationObject([]byte(`{"Bookmarks":{},"Bookmarks":{}}`)); err == nil {
 		t.Fatal("expected duplicate operation name to be rejected")
+	}
+}
+
+func TestUnavailableFailureIsSafeAndActionable(t *testing.T) {
+	failure := UnavailableFailure()
+	if failure.Code != "CONTRACT_FAILED" || failure.Message != "Operation contracts are unavailable or invalid" || failure.RecoveryCommand != "twt contract refresh" {
+		t.Fatalf("unexpected failure: %#v", failure)
 	}
 }

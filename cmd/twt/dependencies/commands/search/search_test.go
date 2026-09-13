@@ -3,10 +3,12 @@ package search
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"testing"
 
-	searchcommand "github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands/search"
-	searchoperation "github.com/ach968/x-twt-cli/internal/app/operations/search"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
+	searchcommand "github.com/ach968/x-twitter-cli3/internal/app/cli/dependencies/commands/search"
+	searchoperation "github.com/ach968/x-twitter-cli3/internal/app/operations/search"
 )
 
 type controlledSearchClient struct {
@@ -62,5 +64,14 @@ func TestClientReusesInitializationFailure(t *testing.T) {
 	}
 	if loads != 1 {
 		t.Fatalf("search client loads = %d, want 1", loads)
+	}
+}
+
+func TestLoadClientClassifiesInvalidContractState(t *testing.T) {
+	t.Setenv("TWT_CONTRACT_FILE", filepath.Join(t.TempDir(), "missing-contracts.json"))
+	_, err := loadClient(context.Background())
+	var failure *app.OperationFailure
+	if !errors.As(err, &failure) || failure.Code != "CONTRACT_FAILED" || failure.RecoveryCommand != "twt contract refresh" {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

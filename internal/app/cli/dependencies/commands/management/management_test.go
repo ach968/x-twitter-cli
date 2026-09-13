@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	managementservice "github.com/ach968/x-twt-cli/internal/app/management"
+	managementservice "github.com/ach968/x-twitter-cli3/internal/app/management"
 )
 
 func TestBrowserSetupConfirmationWarnsBeforeCleanup(t *testing.T) {

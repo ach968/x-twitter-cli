@@ -5,6 +5,11 @@ evidence, recommendations, answers, and accepted decisions that shape the
 command. Recommendations remain proposals until Matt explicitly accepts or
 revises them.
 
+The v1 release decision on 2026-09-12 made HomeTimeline optional WIP. Search,
+Bookmarks, and BookmarkSearchTimeline are the required capture, activation, and
+live-verification set. That decision supersedes the older four-operation
+requirements retained later in this interview as design history.
+
 ## Status
 
 - Q1-Q40: resolved

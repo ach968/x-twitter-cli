@@ -6,11 +6,11 @@ import (
 	"context"
 	"io"
 
-	"github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands"
-	bookmarkscommand "github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands/bookmarks"
-	managementcommand "github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands/management"
-	searchcommand "github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands/search"
-	"github.com/ach968/x-twt-cli/internal/app/management"
+	"github.com/ach968/x-twitter-cli3/internal/app/cli/dependencies/commands"
+	bookmarkscommand "github.com/ach968/x-twitter-cli3/internal/app/cli/dependencies/commands/bookmarks"
+	managementcommand "github.com/ach968/x-twitter-cli3/internal/app/cli/dependencies/commands/management"
+	searchcommand "github.com/ach968/x-twitter-cli3/internal/app/cli/dependencies/commands/search"
+	"github.com/ach968/x-twitter-cli3/internal/app/management"
 )
 
 type Dependencies struct {

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
 )
 
 const evidenceVersion = 1

@@ -6,7 +6,7 @@ knowledge into the Search operation's production adapter.
 
 **Blocked by:** 02: Search operation migration.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 Before starting, read the parent Bookmarks specification, domain glossary,
 accepted design interview, and tickets 01-02's completed notes. Treat them as

@@ -6,7 +6,7 @@ bookmark page, including valid empty accounts and ordinary bookmarked posts.
 
 **Blocked by:** 04: Four-operation contract refresh and live smoke.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Completion notes (2026-09-11):** Implemented the read-only `twt bookmarks`
 listing path with a controlled Execute seam, direct Bookmarks adapter, stable

@@ -7,8 +7,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands"
-	managementservice "github.com/ach968/x-twt-cli/internal/app/management"
+	"github.com/ach968/x-twitter-cli3/internal/app/cli/dependencies/commands"
+	managementservice "github.com/ach968/x-twitter-cli3/internal/app/management"
 )
 
 func NewSetup(service managementservice.Service) commands.Command {

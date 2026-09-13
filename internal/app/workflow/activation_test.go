@@ -9,7 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
+	"github.com/ach968/x-twitter-cli3/internal/app/contracts"
 )
 
 type transactionIDFunc func(method, path string) (string, error)
@@ -129,7 +130,7 @@ func TestValidateAndActivateCandidate(t *testing.T) {
 			t.Fatal(err)
 		}
 		var variables map[string]any
-		if err := json.Unmarshal([]byte(parsed.Query().Get("variables")), &variables); err != nil || variables["rawQuery"] != "x-twt-contract-validation-improbable-6d1e2f" {
+		if err := json.Unmarshal([]byte(parsed.Query().Get("variables")), &variables); err != nil || variables["rawQuery"] != "x-twitter-cli3-contract-validation-improbable-6d1e2f" {
 			t.Fatalf("bookmark-search validation query was not preserved: %s", request.URL)
 		}
 		return app.UpstreamResponse{Status: 403}, nil
@@ -141,5 +142,28 @@ func TestValidateAndActivateCandidate(t *testing.T) {
 	contents, _ = os.ReadFile(active)
 	if !strings.Contains(string(contents), "old-id") {
 		t.Fatal("active contracts changed after bookmark-search rejection")
+	}
+}
+
+func TestValidateAndActivateCandidateDoesNotRequireHomeTimeline(t *testing.T) {
+	directory := t.TempDir()
+	active := filepath.Join(directory, "contracts.json")
+	candidate := filepath.Join(directory, "contracts.candidate.json")
+	properties := testContracts()
+	delete(properties.Operations, app.HomeTimeline)
+	writeContracts(t, candidate, properties)
+
+	transport := successfulTransport()
+	transport.home = func(app.PreparedRequest) (app.UpstreamResponse, error) {
+		t.Fatal("optional HomeTimeline was executed")
+		return app.UpstreamResponse{}, nil
+	}
+	result, err := ValidateAndActivateCandidate(context.Background(), candidate, active, app.AuthenticationState{}, transport, testTransactionIDs)
+	if err != nil || !result.Activated {
+		t.Fatalf("activation failed: %#v %v", result, err)
+	}
+	loaded, err := contracts.Load(active)
+	if err != nil || len(loaded.Operations) != 3 {
+		t.Fatalf("active contracts = %#v, %v", loaded, err)
 	}
 }

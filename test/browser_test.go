@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
-	"github.com/ach968/x-twt-cli/internal/app/browser"
-	"github.com/ach968/x-twt-cli/internal/app/httpclient"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
+	"github.com/ach968/x-twitter-cli3/internal/app/browser"
+	"github.com/ach968/x-twitter-cli3/internal/app/httpclient"
 )
 
 type transportFunc struct {
@@ -163,7 +163,7 @@ func TestOperationContractCapture(t *testing.T) {
 	homePath := graphQLPath("home-id", app.HomeTimeline, map[string]any{"count": 20, "requestContext": "launch"})
 	searchPath := graphQLPath("search-id", app.SearchTimeline, map[string]any{"count": 20, "rawQuery": "x"})
 	bookmarksPath := graphQLPath("bookmarks-id", app.Bookmarks, map[string]any{"count": 20})
-	bookmarkSearchPath := graphQLPath("bookmark-search-id", app.BookmarkSearchTimeline, map[string]any{"count": 20, "rawQuery": "x-twt-contract-validation-improbable-6d1e2f"})
+	bookmarkSearchPath := graphQLPath("bookmark-search-id", app.BookmarkSearchTimeline, map[string]any{"count": 20, "rawQuery": "x-twitter-cli3-contract-validation-improbable-6d1e2f"})
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		response.Header().Set("Content-Type", "text/html")
 		switch request.URL.Path {
@@ -176,7 +176,7 @@ func TestOperationContractCapture(t *testing.T) {
 		case "/search":
 			fmt.Fprintf(response, `<script>fetch(%s,{headers:{authorization:"Bearer captured-token"}})</script>`, strconv.Quote(searchPath))
 		case "/bookmarks":
-			fmt.Fprintf(response, `<input placeholder="Search Bookmarks" oninput='fetch(%s,{headers:{authorization:"Bearer captured-token"}})'><script>fetch(%s,{headers:{authorization:"Bearer captured-token"}})</script>`, strconv.Quote(bookmarkSearchPath), strconv.Quote(bookmarksPath))
+			fmt.Fprintf(response, `<button aria-label="Search Bookmarks" onclick='const control=document.createElement("input");control.placeholder="Search Bookmarks";control.oninput=()=>fetch(%s,{headers:{authorization:"Bearer captured-token"}});this.after(control)'>Search</button><script>fetch(%s,{headers:{authorization:"Bearer captured-token"}})</script>`, strconv.Quote(bookmarkSearchPath), strconv.Quote(bookmarksPath))
 		default:
 			response.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(response, `{"data":{"ok":true}}`)

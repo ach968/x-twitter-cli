@@ -1,6 +1,11 @@
-# x-twt-cli design interview
+# x-twitter-cli3 design interview
 
-This document is the durable foundation decision tree for `x-twt-cli`: a public Go CLI and thin Codex skill that provide a free, local, read-only interface to X. Feature-specific interviews live with their local specifications under `.scratch/`. Recommendations remain proposals until Matt explicitly accepts or revises them.
+This document is the durable foundation decision tree for `x-twitter-cli3`: a public Go CLI and thin Codex skill that provide a free, local, read-only interface to X. Feature-specific interviews live with their local specifications under `.scratch/`. Recommendations remain proposals until Matt explicitly accepts or revises them.
+
+For the v1 Search-and-Bookmarks release, HomeTimeline is optional work in
+progress. It has no public command and is not part of contract capture,
+activation, or live release gates. This current release decision supersedes
+older four-operation requirements preserved below as design history.
 
 ## Current evidence
 
@@ -94,7 +99,7 @@ The original interview assumed that normal data commands would navigate X and in
 
 ### Q8: Authentication-state ownership
 
-**Question:** Should `x-twt` own a dedicated browser profile, export a smaller storage-state snapshot, or attempt to use the user's everyday browser profile directly?
+**Question:** Should `x-twitter-cli3` own a dedicated browser profile, export a smaller storage-state snapshot, or attempt to use the user's everyday browser profile directly?
 
 **Recommendation:** Use one application-owned persistent Chromium profile for the default X identity in v1, stored outside the repository with user-only permissions. Derive the request client's cookie jar from that profile. Do not automate or copy directly from a running everyday profile: profile locking, browser-specific encryption, unrelated cookies, extensions, and concurrent writes make that an unsafe primary interface. Keep named profiles as a later extension.
 
@@ -126,7 +131,7 @@ The original interview assumed that normal data commands would navigate X and in
 
 **Question:** Should the CLI and Codex skill ship together, and which names should be canonical?
 
-**Recommendation:** Release the Go CLI and skill from one repository and version line so compatibility is explicit. Use repository name `x-twt-cli`, executable `twt`, and skill name `twt-cli`. Provide an explicit skill-install command; binary installation must never modify Codex configuration, prompt interactively, or download Chromium.
+**Recommendation:** Release the Go CLI and skill from one repository and version line so compatibility is explicit. Use repository name `x-twitter-cli3`, executable `twt`, and skill name `twt-cli`. Provide an explicit skill-install command; binary installation must never modify Codex configuration, prompt interactively, or download Chromium.
 
 **Matt's answer:** Approved the recommendation with executable `twt` and skill name `twt-cli`.
 

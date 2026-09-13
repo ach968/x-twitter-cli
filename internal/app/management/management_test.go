@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
-	"github.com/ach968/x-twt-cli/internal/app/browser"
-	"github.com/ach968/x-twt-cli/internal/app/contracts"
-	"github.com/ach968/x-twt-cli/internal/app/management"
-	"github.com/ach968/x-twt-cli/internal/app/state"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
+	"github.com/ach968/x-twitter-cli3/internal/app/browser"
+	"github.com/ach968/x-twitter-cli3/internal/app/contracts"
+	"github.com/ach968/x-twitter-cli3/internal/app/management"
+	"github.com/ach968/x-twitter-cli3/internal/app/state"
 )
 
 type transactionIDs func(string, string) (string, error)
@@ -81,7 +81,7 @@ func TestLoginCapturesPersistsAndActivatesState(t *testing.T) {
 		if !options.Headless || options.ProfilePath != paths.ProfilePath {
 			t.Fatalf("capture options = %#v", options)
 		}
-		if len(options.Steps) != 3 || options.Steps[2].URL != "https://x.com/i/bookmarks" || !options.Steps[2].TriggerBookmarkSearch {
+		if len(options.Steps) != 2 || options.Steps[1].URL != "https://x.com/i/bookmarks" || !options.Steps[1].TriggerBookmarkSearch {
 			t.Fatalf("bookmark capture recipe = %#v", options.Steps)
 		}
 		return capturedState(), nil

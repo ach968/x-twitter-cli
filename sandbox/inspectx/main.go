@@ -12,8 +12,8 @@ import (
 	"syscall"
 	"time"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
-	"github.com/ach968/x-twt-cli/internal/app/state"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
+	"github.com/ach968/x-twitter-cli3/internal/app/state"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/launcher/flags"
@@ -32,8 +32,8 @@ func main() {
 func run() error {
 	var (
 		chromiumPath       = flag.String("chromium", defaultChromiumPath(), "Chromium executable")
-		profilePath        = flag.String("profile", defaultProfilePath(), "x-twt Chromium profile")
-		authenticationPath = flag.String("authentication", defaultAuthenticationPath(), "x-twt authentication state")
+		profilePath        = flag.String("profile", defaultProfilePath(), "x-twitter-cli3 Chromium profile")
+		authenticationPath = flag.String("authentication", defaultAuthenticationPath(), "x-twitter-cli3 authentication state")
 		headless           = flag.Bool("headless", false, "run Chromium without a visible window")
 		timeout            = flag.Duration("timeout", defaultTimeout, "navigation timeout")
 	)
@@ -55,11 +55,11 @@ func run() error {
 		return fmt.Errorf("Chromium executable is unavailable: %s", *chromiumPath)
 	}
 	if info, err := os.Stat(*profilePath); err != nil || !info.IsDir() {
-		return fmt.Errorf("x-twt application profile does not exist: %s; authenticate it first with: make auth-browser", *profilePath)
+		return fmt.Errorf("x-twitter-cli3 application profile does not exist: %s; authenticate it first with: make auth-browser", *profilePath)
 	}
 	authentication, err := state.LoadAuthentication(*authenticationPath)
 	if err != nil {
-		return fmt.Errorf("load x-twt authentication state: %w", err)
+		return fmt.Errorf("load x-twitter-cli3 authentication state: %w", err)
 	}
 	authenticationCookies, err := requiredAuthenticationCookies(authentication.Cookies)
 	if err != nil {
@@ -89,7 +89,7 @@ func run() error {
 	}
 	page = page.Timeout(*timeout)
 	if err := page.SetCookies(authenticationCookies); err != nil {
-		return fmt.Errorf("apply x-twt authentication state: %w", err)
+		return fmt.Errorf("apply x-twitter-cli3 authentication state: %w", err)
 	}
 	if err := page.Navigate(targetURL.String()); err != nil {
 		return fmt.Errorf("navigate to X URL: %w", err)
@@ -154,7 +154,7 @@ func requiredAuthenticationCookies(cookies []app.AuthenticationCookie) ([]*proto
 		}
 	}
 	if required["auth_token"] == "" || required["ct0"] == "" {
-		return nil, errors.New("x-twt authentication state must contain auth_token and ct0 cookies; run make test-live to refresh it")
+		return nil, errors.New("x-twitter-cli3 authentication state must contain auth_token and ct0 cookies; run make test-live to refresh it")
 	}
 	return []*proto.NetworkCookieParam{
 		{Name: "auth_token", Value: required["auth_token"], URL: "https://x.com/", Secure: true},
@@ -178,7 +178,7 @@ func defaultProfilePath() string {
 		}
 		stateRoot = filepath.Join(home, ".local", "state")
 	}
-	return filepath.Join(stateRoot, "x-twt", "chromium-profile")
+	return filepath.Join(stateRoot, "x-twitter-cli3", "chromium-profile")
 }
 
 func defaultAuthenticationPath() string {
@@ -190,5 +190,5 @@ func defaultAuthenticationPath() string {
 		}
 		configRoot = filepath.Join(home, ".config")
 	}
-	return filepath.Join(configRoot, "x-twt", "authentication.json")
+	return filepath.Join(configRoot, "x-twitter-cli3", "authentication.json")
 }

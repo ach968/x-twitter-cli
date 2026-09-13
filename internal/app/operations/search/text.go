@@ -1,6 +1,6 @@
 package search
 
-import "github.com/ach968/x-twt-cli/internal/app/models"
+import "github.com/ach968/x-twitter-cli3/internal/app/models"
 
 func cleanReaderText(value string) string { return models.CleanReaderText(value) }
 

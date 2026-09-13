@@ -234,10 +234,11 @@ contract without depending on account content.
 - Post collection and continuation are decoded independently. A valid empty
   page succeeds and can retain an active next cursor. An invalid envelope or a
   page with nothing meaningfully decodable fails.
-- Both Bookmarks operation names join the required operation-contract set.
-  Candidate contract properties are activated only after HomeTimeline,
-  SearchTimeline, Bookmarks, and BookmarkSearchTimeline all execute
-  successfully.
+- Both Bookmarks operation names join SearchTimeline in the required
+  operation-contract set. HomeTimeline remains an optional WIP contract and
+  cannot block capture, validation, or activation for the v1 commands.
+  Candidate contract properties are activated only after SearchTimeline,
+  Bookmarks, and BookmarkSearchTimeline all execute successfully.
 - Bookmark-search validation uses a deliberately improbable query, so contract
   activation does not depend on matching private content.
 - The browser capture module owns operation-specific recipes. It opens the
@@ -272,9 +273,10 @@ contract without depending on account content.
   variable overrides. They verify that listing selects Bookmarks, search selects
   BookmarkSearchTimeline, query and cursor values pass unchanged, and page size
   remains supplied by contract properties.
-- Contract tests cover the four-operation required set, candidate rejection
-  when any required operation is missing or invalid, and activation only after
-  all four operations succeed.
+- Contract tests cover the three-operation required set, optional valid
+  HomeTimeline properties, candidate rejection when a required operation is
+  missing or invalid, and activation only after all three required operations
+  succeed.
 - Browser capture tests cover operation-recipe selection and the combined
   Bookmarks-page flow without exposing browser selectors through the caller's
   interface.
@@ -290,7 +292,7 @@ contract without depending on account content.
   assert behavior below the newly accepted operation interfaces are replaced
   when they no longer describe a useful seam.
 - The explicit live suite makes one representative direct request for
-  HomeTimeline, SearchTimeline, Bookmarks, and BookmarkSearchTimeline. It checks
+  SearchTimeline, Bookmarks, and BookmarkSearchTimeline. It checks
   for no transport error, a 2xx upstream response containing valid JSON, and no
   classified operation failure.
 - The live suite does not assert result count, result kind, continuation,

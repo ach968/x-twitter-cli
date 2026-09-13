@@ -8,15 +8,23 @@ import (
 	"os"
 	"strings"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
 )
 
 var requiredOperations = []app.OperationName{
-	app.HomeTimeline,
 	app.SearchTimeline,
 	app.Bookmarks,
 	app.BookmarkSearchTimeline,
 }
+
+var supportedOperations = map[app.OperationName]struct{}{
+	app.HomeTimeline:           {},
+	app.SearchTimeline:         {},
+	app.Bookmarks:              {},
+	app.BookmarkSearchTimeline: {},
+}
+
+const invalidOperationsMessage = "Contract properties must contain every required operation and no unsupported operations"
 
 type ContractPropertiesError struct {
 	Code    string
@@ -108,19 +116,24 @@ func Load(path string) (app.ContractProperties, error) {
 	if err != nil || operationRaw == nil {
 		return app.ContractProperties{}, newContractPropertiesError("Operations must be an object")
 	}
-	if len(operationRaw) != len(requiredOperations) {
-		return app.ContractProperties{}, newContractPropertiesError("Contract properties must contain exactly the required valid operations")
+	if len(operationRaw) < len(requiredOperations) || len(operationRaw) > len(supportedOperations) {
+		return app.ContractProperties{}, newContractPropertiesError(invalidOperationsMessage)
 	}
 
 	properties := app.ContractProperties{Version: version, Operations: make(map[app.OperationName]app.OperationContract, len(operationRaw))}
 	for _, name := range requiredOperations {
-		encoded, ok := operationRaw[string(name)]
-		if !ok {
-			return app.ContractProperties{}, newContractPropertiesError("Contract properties must contain exactly the required valid operations")
+		if _, ok := operationRaw[string(name)]; !ok {
+			return app.ContractProperties{}, newContractPropertiesError(invalidOperationsMessage)
+		}
+	}
+	for rawName, encoded := range operationRaw {
+		name := app.OperationName(rawName)
+		if _, ok := supportedOperations[name]; !ok {
+			return app.ContractProperties{}, newContractPropertiesError(invalidOperationsMessage)
 		}
 		var operation app.OperationContract
 		if err := json.Unmarshal(encoded, &operation); err != nil || !validateOperation(operation) {
-			return app.ContractProperties{}, newContractPropertiesError("Contract properties must contain exactly the required valid operations")
+			return app.ContractProperties{}, newContractPropertiesError(invalidOperationsMessage)
 		}
 		properties.Operations[name] = operation
 	}
@@ -133,4 +146,12 @@ func ErrorCode(err error) string {
 		return target.Code
 	}
 	return ""
+}
+
+func UnavailableFailure() *app.OperationFailure {
+	return &app.OperationFailure{
+		Code:            "CONTRACT_FAILED",
+		Message:         "Operation contracts are unavailable or invalid",
+		RecoveryCommand: "twt contract refresh",
+	}
 }

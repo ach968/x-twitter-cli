@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	app "github.com/ach968/x-twt-cli/internal/app"
+	app "github.com/ach968/x-twitter-cli3/internal/app"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/input"
 	"github.com/go-rod/rod/lib/proto"
@@ -32,7 +32,7 @@ type ContractCaptureOptions struct {
 
 // bookmarkSearchValidationQuery is deliberately improbable so contract refresh
 // proves request execution without relying on private bookmark content.
-const bookmarkSearchValidationQuery = "x-twt-contract-validation-improbable-6d1e2f"
+const bookmarkSearchValidationQuery = "x-twitter-cli3-contract-validation-improbable-6d1e2f"
 
 type AuthenticationRequiredError struct {
 	URL string
@@ -49,6 +49,34 @@ func authenticationRequiredURL(value string) bool {
 	}
 	path := strings.ToLower(parsed.Path)
 	return path == "/login" || strings.HasPrefix(path, "/i/flow/login") || strings.HasPrefix(path, "/account/access")
+}
+
+func headlessAuthenticationError(client *browserClient) error {
+	info, err := client.page.Info()
+	if err != nil {
+		return nil
+	}
+	if authenticationRequiredURL(info.URL) {
+		return &AuthenticationRequiredError{URL: info.URL}
+	}
+	parsed, err := url.Parse(info.URL)
+	if err != nil {
+		return nil
+	}
+	host := parsed.Hostname()
+	if host != "x.com" && !strings.HasSuffix(host, ".x.com") {
+		return nil
+	}
+	cookies, err := client.launched.browser.GetCookies()
+	if err != nil {
+		return err
+	}
+	for _, cookie := range cookies {
+		if cookie.Name == "auth_token" && cookie.Value != "" {
+			return nil
+		}
+	}
+	return &AuthenticationRequiredError{URL: info.URL}
 }
 
 func recordParameter(parsed *url.URL, name string) (map[string]any, error) {
@@ -91,7 +119,7 @@ func captureOperation(request *proto.NetworkRequest) (*capturedOperationResult, 
 		return nil, nil
 	}
 	name := app.OperationName(parts[4])
-	if !requiredCaptureOperation(name) {
+	if !supportedCaptureOperation(name) {
 		return nil, nil
 	}
 	if request.Method != "GET" && request.Method != "POST" {
@@ -141,7 +169,7 @@ func captureOperation(request *proto.NetworkRequest) (*capturedOperationResult, 
 	}, Authorization: authorization}, nil
 }
 
-func requiredCaptureOperation(name app.OperationName) bool {
+func supportedCaptureOperation(name app.OperationName) bool {
 	switch name {
 	case app.HomeTimeline, app.SearchTimeline, app.Bookmarks, app.BookmarkSearchTimeline:
 		return true
@@ -153,7 +181,21 @@ func requiredCaptureOperation(name app.OperationName) bool {
 // triggerBookmarkSearch contains the X-page interaction recipe. Callers only
 // ask to capture operation contracts and never receive selectors or controls.
 func triggerBookmarkSearch(page *rod.Page) error {
-	control, err := page.Element(`input[placeholder="Search Bookmarks"]`)
+	const searchInputSelector = `input[placeholder="Search Bookmarks"]`
+	hasInput, _, err := page.Has(searchInputSelector)
+	if err != nil {
+		return fmt.Errorf("inspect Search Bookmarks control: %w", err)
+	}
+	if !hasInput {
+		launcher, err := page.Element(`button[aria-label="Search Bookmarks"]`)
+		if err != nil {
+			return fmt.Errorf("locate Search Bookmarks launcher: %w", err)
+		}
+		if err := launcher.Click(proto.InputMouseButtonLeft, 1); err != nil {
+			return fmt.Errorf("open Search Bookmarks control: %w", err)
+		}
+	}
+	control, err := page.Element(searchInputSelector)
 	if err != nil {
 		return fmt.Errorf("locate Search Bookmarks control: %w", err)
 	}
@@ -218,7 +260,14 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 	waitForOperations := func(names []app.OperationName) error {
 		timer := time.NewTimer(options.Timeout)
 		defer timer.Stop()
+		authenticationTicker := time.NewTicker(500 * time.Millisecond)
+		defer authenticationTicker.Stop()
 		for {
+			if options.Headless {
+				if authErr := headlessAuthenticationError(client); authErr != nil {
+					return authErr
+				}
+			}
 			mutex.Lock()
 			ready := true
 			for _, name := range names {
@@ -237,6 +286,7 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 			}
 			select {
 			case <-notify:
+			case <-authenticationTicker.C:
 			case <-timer.C:
 				if options.Headless {
 					if info, infoErr := page.Info(); infoErr == nil && authenticationRequiredURL(info.URL) {
@@ -256,7 +306,7 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 		for index, value := range options.URLs {
 			waitFor := []app.OperationName{}
 			if index == len(options.URLs)-1 {
-				waitFor = []app.OperationName{app.HomeTimeline, app.SearchTimeline}
+				waitFor = []app.OperationName{app.SearchTimeline}
 			}
 			steps = append(steps, ContractCaptureStep{URL: value, WaitFor: waitFor})
 		}
@@ -265,15 +315,14 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 		return result, errors.New("At least one capture URL or step is required")
 	}
 	for _, step := range steps {
+		waitForNavigation := page.WaitNavigation(proto.PageLifecycleEventNameDOMContentLoaded)
 		if err = page.Navigate(step.URL); err != nil {
 			return result, err
 		}
-		if err = page.WaitLoad(); err != nil {
-			return result, err
-		}
+		waitForNavigation()
 		if options.Headless {
-			if info, infoErr := page.Info(); infoErr == nil && authenticationRequiredURL(info.URL) {
-				return result, &AuthenticationRequiredError{URL: info.URL}
+			if authErr := headlessAuthenticationError(client); authErr != nil {
+				return result, authErr
 			}
 		}
 		if err = waitForOperations(step.WaitFor); err != nil {
@@ -289,7 +338,6 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 		}
 	}
 	requiredNames := []app.OperationName{
-		app.HomeTimeline,
 		app.SearchTimeline,
 		app.Bookmarks,
 		app.BookmarkSearchTimeline,
@@ -310,9 +358,9 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 	for i, cookie := range cookies {
 		authCookies[i] = app.AuthenticationCookie{Name: cookie.Name, Value: cookie.Value}
 	}
-	capturedContracts := make(map[app.OperationName]app.OperationContract, len(requiredNames))
-	for _, name := range requiredNames {
-		capturedContracts[name] = operations[name]
+	capturedContracts := make(map[app.OperationName]app.OperationContract, len(operations))
+	for name, operation := range operations {
+		capturedContracts[name] = operation
 	}
 	return app.CapturedState{
 		Contracts:      app.ContractProperties{Version: 1, Operations: capturedContracts},

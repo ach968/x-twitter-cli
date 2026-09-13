@@ -4,11 +4,11 @@ import (
 	"context"
 	"os"
 
-	bookmarkscommanddependency "github.com/ach968/x-twt-cli/cmd/twt/dependencies/commands/bookmarks"
-	searchcommanddependency "github.com/ach968/x-twt-cli/cmd/twt/dependencies/commands/search"
-	"github.com/ach968/x-twt-cli/internal/app/cli"
-	"github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands"
-	"github.com/ach968/x-twt-cli/internal/app/management"
+	bookmarkscommanddependency "github.com/ach968/x-twitter-cli3/cmd/twt/dependencies/commands/bookmarks"
+	searchcommanddependency "github.com/ach968/x-twitter-cli3/cmd/twt/dependencies/commands/search"
+	"github.com/ach968/x-twitter-cli3/internal/app/cli"
+	"github.com/ach968/x-twitter-cli3/internal/app/cli/dependencies/commands"
+	"github.com/ach968/x-twitter-cli3/internal/app/management"
 )
 
 func main() {

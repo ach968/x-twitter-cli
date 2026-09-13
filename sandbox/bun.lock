@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "x-twt-transaction-id-probe",
+      "name": "x-twitter-cli3-transaction-id-probe",
       "dependencies": {
         "x-client-transaction-id": "0.3.1",
       },

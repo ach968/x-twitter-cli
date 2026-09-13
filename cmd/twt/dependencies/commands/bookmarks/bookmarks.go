@@ -6,11 +6,11 @@ import (
 	"sync"
 
 	transaction "github.com/ach968/x-client-transaction-id-go"
-	bookmarkcommand "github.com/ach968/x-twt-cli/internal/app/cli/dependencies/commands/bookmarks"
-	"github.com/ach968/x-twt-cli/internal/app/contracts"
-	"github.com/ach968/x-twt-cli/internal/app/httpclient"
-	bookmarkoperation "github.com/ach968/x-twt-cli/internal/app/operations/bookmarks"
-	"github.com/ach968/x-twt-cli/internal/app/state"
+	bookmarkcommand "github.com/ach968/x-twitter-cli3/internal/app/cli/dependencies/commands/bookmarks"
+	"github.com/ach968/x-twitter-cli3/internal/app/contracts"
+	"github.com/ach968/x-twitter-cli3/internal/app/httpclient"
+	bookmarkoperation "github.com/ach968/x-twitter-cli3/internal/app/operations/bookmarks"
+	"github.com/ach968/x-twitter-cli3/internal/app/state"
 )
 
 type clientLoader func(context.Context) (bookmarkcommand.Requester, error)
@@ -49,7 +49,7 @@ func loadClient(ctx context.Context) (bookmarkcommand.Requester, error) {
 	paths := state.ResolvePaths(home, environment)
 	properties, err := contracts.Load(state.ResolveContractSource("", environment, paths.ActiveContractPath))
 	if err != nil {
-		return nil, err
+		return nil, contracts.UnavailableFailure()
 	}
 	authentication, err := state.LoadAuthentication(paths.AuthenticationPath)
 	if err != nil {

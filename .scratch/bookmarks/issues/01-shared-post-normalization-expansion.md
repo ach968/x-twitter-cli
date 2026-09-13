@@ -7,7 +7,7 @@ makes the later Search migration and Bookmarks operation safe.
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 Before starting, read the parent Bookmarks specification, domain glossary,
 accepted design interview, current Search contract, and Bookmarks evidence

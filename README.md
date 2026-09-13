@@ -1,164 +1,257 @@
-# x-twt-cli
+# x-twitter-cli3
 
-This repository contains a local, read-only X client. It proves contract loading and activation, secure authentication-state persistence, conservative response classification, direct-HTTP `HomeTimeline` and `SearchTimeline` reads, and the normalized `twt search` data command.
+`x-twitter-cli3` is an unofficial, local, read-only command-line client for X.
+The `twt` executable provides stable JSON output for public search and the
+authenticated account's bookmarks without exposing X's private response
+formats to callers.
 
-## Layout
+The v1 command surface is:
 
-```text
-cmd/twt/               executable entrypoint
-internal/app/          shared operation, authentication, and result types
-internal/app/browser/  Chromium setup, profile lifecycle, capture, and browser transport
-internal/app/httpclient/   request preparation, direct HTTP transport, and response classification
-internal/app/contracts/ contract validation and loading
-internal/app/state/    application paths and persisted authentication/contract state
-internal/app/workflow/ cross-module workflows such as candidate activation
-test/                  integration tests, evidence tooling, and reviewed testdata
-docs/                  design history and agent guidance
-.scratch/              local specifications and issue-tracker records
-```
+- `twt search` for Top, Latest, People, Media, and Lists search results.
+- `twt bookmarks` for listing or searching the authenticated account's saved
+  posts.
+- `twt setup`, `twt auth`, and `twt contract` for local browser,
+  authentication, and operation-contract maintenance.
 
-The root `app` package defines the stable vocabulary and transport boundary. Focused subpackages own policy and infrastructure; build-tagged integration tests live under `test/`. Both operations use the direct HTTP transport. The `SearchTimeline` operation requests a fresh `x-client-transaction-id` from the external [`x-client-transaction-id-go`](https://github.com/ach968/x-client-transaction-id-go) module and adds it before handing the complete request to the generic HTTP transport.
+Home timeline support is work in progress. Its internal transport remains in
+the repository, but there is no public Home command and Home is not required
+for setup, authentication, contract refresh, Search, or Bookmarks.
 
-Build the `twt` executable:
+## Requirements
+
+The v1 target is Linux. Other operating systems have not been tested or
+documented yet.
+
+End users need:
+
+- An X account they are permitted to access.
+- Internet access to X during authentication and data commands.
+- Go 1.26 or newer when installing with `go install`. Go is not needed when
+  using a prebuilt release binary.
+- Chromium for authentication and contract refresh. `twt setup` installs the
+  revision managed by the project's browser library after asking for
+  confirmation; a preinstalled system browser is not required or reused.
+
+The Go dependencies are compiled into the `twt` binary. In particular,
+[`x-client-transaction-id-go`](https://github.com/ach968/x-client-transaction-id-go)
+generates current request metadata, [Rod](https://github.com/go-rod/rod)
+manages the isolated Chromium process, and the JSON Schema library validates
+the documented output contracts in tests. No X developer API key, Node.js
+runtime, browser extension, background daemon, or everyday Chrome profile is
+required.
+
+## Install
+
+Install the latest tagged version with Go:
 
 ```bash
-go build ./cmd/twt
+go install github.com/ach968/x-twitter-cli3/cmd/twt@latest
 ```
 
-Run the deterministic unit suite:
+Go normally writes the executable to `$(go env GOPATH)/bin`. Ensure that
+directory is on `PATH`, then verify the command is available:
 
 ```bash
-go test ./...
+command -v twt
+twt --help
 ```
 
-## Setup, authentication, and contracts
+To build the current checkout instead:
 
-The explicit maintenance commands are:
+```bash
+git clone https://github.com/ach968/x-twitter-cli3.git
+cd x-twitter-cli3
+go build -o twt ./cmd/twt
+```
+
+Prebuilt GitHub release archives and checksums are planned as part of the
+release workflow. Until that workflow exists, `go install` is the supported
+installation path.
+
+Installing the binary does not launch a browser, download Chromium, change
+Codex configuration, or authenticate to X.
+
+## First-time setup and authentication
+
+Prepare the managed Chromium revision:
 
 ```bash
 twt setup
+```
+
+The command reports whether Chromium needs to be installed or updated and
+asks before downloading it. After a successful update, it may separately
+offer to remove older managed revisions; cleanup defaults to no because older
+`twt` versions may still need them.
+
+Then authenticate:
+
+```bash
 twt auth login
-twt contract refresh
+```
+
+Authentication uses a dedicated Chromium profile owned by `twt`, not the
+user's everyday browser profile. The command first checks that profile
+headlessly. If X requires a login or interactive challenge, it opens a headed
+Chromium window for the user to complete the flow. Once authenticated, it
+captures the current Search and Bookmarks request contracts, verifies that the
+three required read operations work, and activates the new local state only
+after validation succeeds.
+
+By default, sensitive and generated state is stored at:
+
+```text
+~/.config/x-twitter-cli3/authentication.json       captured cookies and authorization
+~/.config/x-twitter-cli3/contracts.json            active non-secret request contracts
+~/.local/state/x-twitter-cli3/chromium-profile/    isolated Chromium profile
+```
+
+`XDG_CONFIG_HOME` and `XDG_STATE_HOME` replace the corresponding default
+roots when set. Authentication and contract files are written with user-only
+permissions, and their parent directories use user-only access. The
+authentication file and Chromium profile are credentials: never commit,
+publish, attach, or share them.
+
+Inspect local state without opening Chromium or contacting X:
+
+```bash
 twt contract status
 ```
 
-`twt setup` checks for Rod's required managed Chromium revision and asks before
-installing or updating it. After a successful update, it offers to remove older
-managed revisions with a warning that older `twt` builds may still require them.
-Declining cleanup keeps the update successful and leaves the older revisions in
-place. `twt auth login` performs the same check when needed, first checks the
-isolated application profile headlessly, opens it headed only when X requires
-login or an interactive challenge, then
-captures, validates, and activates authentication state and operation contracts.
+X can change its private web operations independently of this project. When a
+data command reports `CONTRACT_FAILED`, explicitly refresh the local contracts
+and then rerun the original command:
 
-`twt contract refresh` is always explicit. It reuses the application profile
-headlessly while authentication remains valid and opens it headed only when X
-requires login or a challenge. A candidate contract set replaces the active file
-only after both required operations validate successfully. `twt contract status`
-performs a local structural check without launching Chromium or contacting X;
-it cannot prove that stored authentication or contracts are still accepted by X.
+```bash
+twt contract refresh
+```
 
-## Search command
+Refresh follows the same headless-first authentication behavior. Data commands
+never refresh contracts, open Chromium, log in, or retry themselves.
 
-`twt search` returns one normalized JSON search page on standard output:
+## Search
+
+Search returns one normalized JSON page on standard output:
 
 ```bash
 twt search 'golang'
 twt search '$NVDA'
 twt search 'golang' --tab people
-twt search 'golang' --tab=LATEST --cursor 'opaque-continuation-value'
+twt search 'golang' --tab=latest --cursor 'opaque-continuation-value'
 ```
 
-The command accepts exactly one non-empty query. `--tab` is optional and
-case-insensitive; its accepted values are `top` (the default), `latest`,
-`people`, `media`, and `lists`. `--cursor` is optional and forwards an opaque
-continuation unchanged to X. It does not accept a result limit, raw-output
-mode, or client-side filtering.
+The command requires exactly one non-empty query. `--tab` is case-insensitive
+and accepts `top` (the default), `latest`, `people`, `media`, or `lists`.
+`--cursor` forwards an opaque continuation value to X unchanged. Fetch the
+next page by repeating the same query and tab with the returned non-null
+`next_cursor`.
 
-Shell quoting applies before `twt` receives the query. In zsh, bash, and similar
-shells, double quotes still expand `$NAME`; if `NVDA` is unset, `"$NVDA"` becomes
-an empty argument. Use single quotes (`'$NVDA'`) or escape the dollar sign
-(`"\$NVDA"`) for a literal cashtag. When an empty argument reaches the command,
-the error explains this distinction.
+Shell expansion happens before `twt` receives a query. In zsh, bash, and
+similar shells, use single quotes (`'$NVDA'`) or escape the dollar sign
+(`"\$NVDA"`) to pass a literal cashtag.
 
-Successful output is a single JSON document with `query`, canonical `tab`,
-ordered `results`, nullable `next_cursor`, and `warnings`. Results are flat
-`post`, `user`, or `list` objects. Refer to the accepted
-[SearchTimeline contract](docs/search-timeline-contract.md) and its
-[machine-readable schema](docs/search-timeline.schema.json) for fields and
-nullability.
+Successful output contains `query`, canonical `tab`, ordered `results`,
+nullable `next_cursor`, and `warnings`. Results are normalized `post`, `user`,
+or `list` objects. See the [Search contract](docs/search-timeline-contract.md)
+and [JSON Schema](docs/search-timeline.schema.json).
 
-Reader-facing text is emitted on one line: source whitespace is collapsed,
-HTML character references are decoded, and straight double quotes are rendered
-as typographic quotes. This keeps raw JSON readable to agents without changing
-the surrounding machine-readable structure.
+## Bookmarks
 
-To fetch the next page, pass the previous page's non-null `next_cursor` back
-unchanged:
+List one page of the authenticated account's bookmarks:
 
 ```bash
-twt search 'golang' --tab top --cursor 'cursor-from-previous-page'
+twt bookmarks
+twt bookmarks --cursor 'opaque-continuation-value'
 ```
 
-Warnings describe skipped unsupported source entries. A usable page with
-warnings still exits zero. Argument, local-state, transport, and incompatible
-response failures write the stable JSON error document to standard error and
-return nonzero. The command does not automatically log in, refresh contracts,
-launch a browser, retry, or deduplicate results.
-
-An agent should treat the output as the product interface and the source
-payload as private evidence. The command has no raw-output switch. Capture
-and review source payloads only through the explicit evidence workflow below;
-never commit pending captures or authentication material.
-
-Run the local browser integration suite with an already-installed Chromium executable:
+Search bookmarks using X's own bookmark-search operation:
 
 ```bash
-TWT_CHROMIUM_EXECUTABLE=/path/to/chromium go test -tags=browser ./...
+twt bookmarks --search 'golang'
+twt bookmarks --search 'golang' --cursor 'opaque-continuation-value'
 ```
 
-Production browser workflows use the Rod-managed Chromium revision under the user's cache. Browser setup is explicit: `EnsureChromiumAvailable` asks for confirmation before downloading that revision. `TWT_CHROMIUM_EXECUTABLE` is an advanced development override and is not used for browser discovery.
+The query and cursor are passed through unchanged. The command does not
+download all bookmarks and filter them locally, automatically traverse every
+page, sort, or deduplicate results. Successful output contains the unchanged
+query or `null`, ordered normalized `bookmarks`, nullable `next_cursor`, and
+`warnings`. See the [Bookmarks contract](docs/bookmarks-page-contract.md) and
+[JSON Schema](docs/bookmarks-page.schema.json).
 
-Real-X tests remain explicit and opt-in. They use authentication captured from the application profile under the XDG state directory and must never run in ordinary CI. The live smoke verifies contract capture and direct execution of both operations; it does not probe X's behavior after deliberately corrupting requests.
+Bookmark output is private account data. Redirect or persist it only when that
+is intentional.
 
-Open any X page in a headed Chromium window using the existing authenticated application profile:
+## Output and failures
+
+Each successful data command writes one JSON document to standard output.
+Usable partial pages may include structured warnings and still exit zero.
+Argument, authentication, local-state, transport, rate-limit, stale-contract,
+and incompatible-response failures write a stable JSON error document to
+standard error and exit nonzero.
+
+The normalized output is the product interface. Raw authenticated X responses
+are private diagnostic evidence and are never exposed by a data-command flag.
+
+## How it works
+
+Chromium is used only to establish authentication and discover X's current
+private request descriptions. Search and Bookmarks commands subsequently load
+the local authentication and contract files, generate any required volatile
+transaction metadata, send the corresponding request directly to X, and
+normalize X's timeline-shaped response into the documented JSON contracts.
+
+This separation means ordinary data reads do not launch Chromium, while
+contract changes can be recovered explicitly without bundling short-lived X
+query identifiers in the binary. It does not make the private upstream
+operations stable: X may change or remove them at any time.
+
+## Development
+
+```text
+cmd/twt/                  executable and production dependency wiring
+internal/app/cli/         command routing, validation, rendering, and exits
+internal/app/operations/  Search and Bookmarks policy and normalization
+internal/app/httpclient/  authenticated direct-request mechanics
+internal/app/browser/     managed Chromium, profile, and contract capture
+internal/app/contracts/   local contract-file validation
+internal/app/state/       XDG paths and persisted state
+internal/app/workflow/    candidate validation and activation
+test/                     schemas, browser integration, and live test seams
+docs/                     output contracts, design history, and agent guidance
+.scratch/                 completed local specifications and issue records
+```
+
+Run deterministic release checks:
 
 ```bash
-go run ./sandbox/inspectx 'https://x.com/jemelehill/status/2095005406548341158'
+make check
+make check-browser
 ```
 
-The Go helper accepts only HTTPS URLs on `x.com` or its subdomains. It uses `$XDG_STATE_HOME/x-twt/chromium-profile` (or `~/.local/state/x-twt/chromium-profile`) and does not copy or print authentication. It reports whether both required X cookies are present, prints its local DevTools URL for browser inspection, and remains open until interrupted. It is headed by default; pass `--headless` when no visible window is wanted. Override the Chromium executable with `TWT_CHROMIUM_EXECUTABLE` or `--chromium` when necessary.
+`make check` covers formatting, vet, and race-enabled tests.
+`make check-browser` additionally exercises real local Chromium against
+controlled local pages. It defaults to `/usr/bin/chromium`; override it with
+`make check-browser CHROMIUM=/path/to/chromium` when needed.
 
-## SearchTimeline evidence
-
-Capture one successful SearchTimeline source payload for the output-discovery corpus:
+Authenticated live-X tests are an explicit, local release gate and must not run
+in ordinary CI:
 
 ```bash
-TWT_SEARCH_QUERY='golang' TWT_SEARCH_PRODUCT='Top' make capture-search-evidence
+make test-live CHROMIUM=/path/to/chromium
 ```
 
-The command requires existing authentication state and active operation contracts. `TWT_SEARCH_PRODUCT` accepts `Top`, `Latest`, `People`, `Media`, or `Lists` and defaults to `Top`. It writes a timestamped JSON file under the user-local state directory (`$XDG_STATE_HOME/x-twt/evidence`, or `~/.local/state/x-twt/evidence`) with user-only permissions. Each file is marked `reviewStatus: pending`; it is local evidence, not an approved or commit-ready fixture. Review and minimize a sample before promoting it into `test/testdata/search-timeline/`.
+They use the local application profile, validate transport and semantic
+operation success without asserting account contents, and never print
+authenticated response bodies.
 
-To capture a subsequent page after manually identifying its bottom cursor, pass it explicitly:
+Run `make help` for the complete development target list. The more detailed
+[design history](docs/design-interview.md) explains the architectural choices.
 
-```bash
-TWT_SEARCH_QUERY='golang' TWT_SEARCH_PRODUCT='Top' TWT_SEARCH_SCENARIO='top-page-2' TWT_SEARCH_CURSOR='...' make capture-search-evidence
-```
+## License and disclaimer
 
-The recorder preserves the source payload shape while recursively redacting credential-shaped fields and strings. It never writes authentication state, request headers, or the cursor value.
+This project is available under the [MIT License](LICENSE).
 
-## Short commands
-
-The [Makefile](Makefile) wraps the common development workflows:
-
-```bash
-make test                 # deterministic unit tests
-make check                # formatting, vet, and race tests
-make test-browser         # local Chromium integration tests
-make check-browser        # all deterministic checks
-make test-live            # full opt-in live-X suite
-TWT_SEARCH_QUERY='golang' make capture-search-evidence
-make build                # build ./twt
-```
-
-Browser targets default to `/usr/bin/chromium`. Override that when needed, for example `make test-live CHROMIUM=/path/to/chromium`. Run `make help` for the complete target list.
+`x-twitter-cli3` is not affiliated with, endorsed by, or sponsored by X Corp.
+It uses private web operations rather than a supported public API, so it may
+stop working when X changes its site. Users are responsible for complying with
+X's terms and all rules applicable to their accounts and data.
