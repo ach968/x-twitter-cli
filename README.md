@@ -30,13 +30,17 @@ End users need:
   revision managed by the project's browser library after asking for
   confirmation; a preinstalled system browser is not required or reused.
 
+> [!IMPORTANT]
+> **No X developer API key is required.** `x-twitter-cli` authenticates through
+> the user's own isolated X browser session; it does not use the official X API
+> or require a developer account.
+
 The Go dependencies are compiled into the `twt` binary. In particular,
 [`x-client-transaction-id-go`](https://github.com/ach968/x-client-transaction-id-go)
 generates current request metadata, [Rod](https://github.com/go-rod/rod)
 manages the isolated Chromium process, and the JSON Schema library validates
-the documented output contracts in tests. No X developer API key, Node.js
-runtime, browser extension, background daemon, or everyday Chrome profile is
-required.
+the documented output contracts in tests. No Node.js runtime, browser
+extension, background daemon, or everyday Chrome profile is required.
 
 ## Install
 
@@ -127,57 +131,12 @@ twt contract refresh
 Refresh follows the same headless-first authentication behavior. Data commands
 never refresh contracts, open Chromium, log in, or retry themselves.
 
-## Search
+## Command documentation
 
-Search returns one normalized JSON page on standard output:
-
-```bash
-twt search 'golang'
-twt search '$NVDA'
-twt search 'golang' --tab people
-twt search 'golang' --tab=latest --cursor 'opaque-continuation-value'
-```
-
-The command requires exactly one non-empty query. `--tab` is case-insensitive
-and accepts `top` (the default), `latest`, `people`, `media`, or `lists`.
-`--cursor` forwards an opaque continuation value to X unchanged. Fetch the
-next page by repeating the same query and tab with the returned non-null
-`next_cursor`.
-
-Shell expansion happens before `twt` receives a query. In zsh, bash, and
-similar shells, use single quotes (`'$NVDA'`) or escape the dollar sign
-(`"\$NVDA"`) to pass a literal cashtag.
-
-Successful output contains `query`, canonical `tab`, ordered `results`,
-nullable `next_cursor`, and `warnings`. Results are normalized `post`, `user`,
-or `list` objects. See the [Search contract](docs/search-timeline-contract.md)
-and [JSON Schema](docs/search-timeline.schema.json).
-
-## Bookmarks
-
-List one page of the authenticated account's bookmarks:
-
-```bash
-twt bookmarks
-twt bookmarks --cursor 'opaque-continuation-value'
-```
-
-Search bookmarks using X's own bookmark-search operation:
-
-```bash
-twt bookmarks --search 'golang'
-twt bookmarks --search 'golang' --cursor 'opaque-continuation-value'
-```
-
-The query and cursor are passed through unchanged. The command does not
-download all bookmarks and filter them locally, automatically traverse every
-page, sort, or deduplicate results. Successful output contains the unchanged
-query or `null`, ordered normalized `bookmarks`, nullable `next_cursor`, and
-`warnings`. See the [Bookmarks contract](docs/bookmarks-page-contract.md) and
-[JSON Schema](docs/bookmarks-page.schema.json).
-
-Bookmark output is private account data. Redirect or persist it only when that
-is intentional.
+The [official command reference](docs/commands.md) documents Search,
+Bookmarks, browser setup, authentication, contract maintenance, pagination,
+JSON output, warnings, and failure recovery. The installed binary also provides
+concise help through `twt --help` and `twt <command> --help`.
 
 ## Output and failures
 
@@ -191,6 +150,20 @@ The normalized output is the product interface. Raw authenticated X responses
 are private diagnostic evidence and are never exposed by a data-command flag.
 
 ## How it works
+
+```mermaid
+flowchart TD
+    Setup["twt setup"] --> Chromium["Managed Chromium"]
+    Auth["twt auth login<br/>twt contract refresh"] --> Chromium
+    Chromium --> Web["X web application"]
+    Web --> Credentials["authentication.json<br/>private, mode 0600"]
+    Web --> Contracts["contracts.json<br/>non-secret, mode 0600"]
+    Credentials --> Commands["twt search<br/>twt bookmarks"]
+    Contracts --> Commands
+    TransactionIDs["x-client-transaction-id-go"] --> Commands
+    Commands --> Reads["X private read operations"]
+    Reads --> Output["Normalized JSON"]
+```
 
 Chromium is used only to establish authentication and discover X's current
 private request descriptions. Search and Bookmarks commands subsequently load
