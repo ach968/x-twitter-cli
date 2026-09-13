@@ -65,6 +65,35 @@ command -v twt
 twt --version
 ```
 
+### Command not found after `go install`
+
+Go can install `twt` successfully even when its binary directory is not on the
+shell's `PATH`. First determine the install directory:
+
+```bash
+go env GOBIN
+go env GOPATH
+```
+
+If `GOBIN` prints a directory, that is the install directory. If it is empty,
+the default is `$(go env GOPATH)/bin`. Add the correct directory to the current
+zsh or bash session with:
+
+```bash
+twt_bin_dir="$(go env GOBIN)"
+if [ -z "$twt_bin_dir" ]; then twt_bin_dir="$(go env GOPATH)/bin"; fi
+export PATH="$twt_bin_dir:$PATH"
+```
+
+To make the fix permanent, add an `export PATH="/the/install/directory:$PATH"`
+line using the resolved directory to `~/.zshrc` for zsh or `~/.bashrc` for
+bash, then open a new terminal. Verify the result with:
+
+```bash
+command -v twt
+twt --version
+```
+
 To build the current checkout instead:
 
 ```bash
