@@ -4,6 +4,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/ach968/x-twitter-cli/internal/app/cli/dependencies/commands"
@@ -17,14 +18,20 @@ type Dependencies struct {
 	Search     searchcommand.Requester
 	Bookmarks  bookmarkscommand.Requester
 	Management management.Service
+	Version    string
 }
 
 type Application struct {
 	commands map[string]commands.Command
+	version  string
 }
 
 func New(dependencies Dependencies) *Application {
-	application := &Application{commands: make(map[string]commands.Command)}
+	version := dependencies.Version
+	if version == "" {
+		version = "dev"
+	}
+	application := &Application{commands: make(map[string]commands.Command), version: version}
 	application.commands["search"] = searchcommand.New(dependencies.Search)
 	application.commands["bookmarks"] = bookmarkscommand.New(dependencies.Bookmarks)
 	application.commands["setup"] = managementcommand.NewSetup(dependencies.Management)
@@ -36,6 +43,10 @@ func New(dependencies Dependencies) *Application {
 func (application *Application) Run(ctx context.Context, arguments []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(arguments) == 0 || (len(arguments) == 1 && (arguments[0] == "help" || arguments[0] == "--help" || arguments[0] == "-h")) {
 		writeRootHelp(stdout)
+		return commands.ExitSuccess
+	}
+	if len(arguments) == 1 && (arguments[0] == "version" || arguments[0] == "--version") {
+		_, _ = fmt.Fprintf(stdout, "twt %s\n", application.version)
 		return commands.ExitSuccess
 	}
 	if len(arguments) == 2 && arguments[0] == "help" {
@@ -52,5 +63,5 @@ func (application *Application) Run(ctx context.Context, arguments []string, std
 }
 
 func writeRootHelp(output io.Writer) {
-	_, _ = io.WriteString(output, "Usage: twt <command> [options]\n\nCommands:\n  search      Search X\n  bookmarks   List or search bookmarked posts\n  setup       Prepare managed Chromium\n  auth        Manage X authentication\n  contract    Inspect or refresh operation contracts\n\nRun 'twt <command> --help' for command help.\n")
+	_, _ = io.WriteString(output, "Usage: twt <command> [options]\n\nCommands:\n  search      Search X\n  bookmarks   List or search bookmarked posts\n  setup       Prepare managed Chromium\n  auth        Manage X authentication\n  contract    Inspect or refresh operation contracts\n  version     Print the installed version\n\nRun 'twt <command> --help' for command help.\n")
 }

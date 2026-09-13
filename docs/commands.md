@@ -5,6 +5,16 @@ status, while data commands write one normalized JSON document to standard
 output. Run `twt --help` or `twt <command> --help` for the installed binary's
 concise help.
 
+## Version
+
+```text
+twt version
+twt --version
+```
+
+Prints the installed version. Tagged release binaries report their release tag;
+local development builds report `dev`.
+
 ## Search
 
 ```text

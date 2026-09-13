@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"os"
+	"runtime/debug"
 
 	bookmarkscommanddependency "github.com/ach968/x-twitter-cli/cmd/twt/dependencies/commands/bookmarks"
 	searchcommanddependency "github.com/ach968/x-twitter-cli/cmd/twt/dependencies/commands/search"
@@ -11,12 +12,24 @@ import (
 	"github.com/ach968/x-twitter-cli/internal/app/management"
 )
 
+var version = "dev"
+
+func installedVersion() string {
+	if version != "dev" {
+		return version
+	}
+	if build, ok := debug.ReadBuildInfo(); ok && build.Main.Version != "" && build.Main.Version != "(devel)" {
+		return build.Main.Version
+	}
+	return version
+}
+
 func main() {
 	managementService, err := management.NewLocal()
 	if err != nil {
 		os.Exit(commands.WriteFailure(os.Stderr, "LOCAL_STATE_UNAVAILABLE", "Unable to resolve local application state"))
 	}
-	application := cli.New(cli.Dependencies{Search: searchcommanddependency.New(), Bookmarks: bookmarkscommanddependency.New(), Management: managementService})
+	application := cli.New(cli.Dependencies{Search: searchcommanddependency.New(), Bookmarks: bookmarkscommanddependency.New(), Management: managementService, Version: installedVersion()})
 	status := application.Run(context.Background(), os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
 	os.Exit(status)
 }

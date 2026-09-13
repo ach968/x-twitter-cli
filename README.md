@@ -1,5 +1,12 @@
 # x-twitter-cli
 
+[![CI](https://github.com/ach968/x-twitter-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/ach968/x-twitter-cli/actions/workflows/ci.yml)
+[![Release](https://github.com/ach968/x-twitter-cli/actions/workflows/release.yml/badge.svg)](https://github.com/ach968/x-twitter-cli/actions/workflows/release.yml)
+[![Latest version](https://img.shields.io/github/v/release/ach968/x-twitter-cli?display_name=tag&sort=semver)](https://github.com/ach968/x-twitter-cli/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ach968/x-twitter-cli.svg)](https://pkg.go.dev/github.com/ach968/x-twitter-cli)
+[![Go version](https://img.shields.io/github/go-mod/go-version/ach968/x-twitter-cli)](go.mod)
+[![License: MIT](https://img.shields.io/github/license/ach968/x-twitter-cli)](LICENSE)
+
 `x-twitter-cli` is an unofficial, local, read-only command-line client for X.
 The `twt` executable provides stable JSON output for public search and the
 authenticated account's bookmarks without exposing X's private response
@@ -55,7 +62,7 @@ directory is on `PATH`, then verify the command is available:
 
 ```bash
 command -v twt
-twt --help
+twt --version
 ```
 
 To build the current checkout instead:
@@ -66,9 +73,8 @@ cd x-twitter-cli
 go build -o twt ./cmd/twt
 ```
 
-Prebuilt GitHub release archives and checksums are planned as part of the
-release workflow. Until that workflow exists, `go install` is the supported
-installation path.
+Tagged releases publish prebuilt Linux `amd64` and `arm64` archives plus a
+checksum file on [GitHub Releases](https://github.com/ach968/x-twitter-cli/releases).
 
 Installing the binary does not launch a browser, download Chromium, change
 Codex configuration, or authenticate to X.

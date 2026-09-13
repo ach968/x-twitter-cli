@@ -91,6 +91,17 @@ func TestHelpIsHumanReadableAndSuccessful(t *testing.T) {
 	}
 }
 
+func TestVersionIsHumanReadableAndSuccessful(t *testing.T) {
+	for _, arguments := range [][]string{{"version"}, {"--version"}} {
+		var stdout bytes.Buffer
+		var stderr bytes.Buffer
+		status := cli.New(cli.Dependencies{Version: "v1.2.3"}).Run(context.Background(), arguments, strings.NewReader(""), &stdout, &stderr)
+		if status != 0 || stderr.String() != "" || stdout.String() != "twt v1.2.3\n" {
+			t.Fatalf("arguments %q: status=%d stdout=%q stderr=%q", arguments, status, stdout.String(), stderr.String())
+		}
+	}
+}
+
 func TestUnknownCommandFails(t *testing.T) {
 	status, stdout, stderr := runApplication("unknown")
 	if status == 0 || stdout != "" || stderr != "{\"code\":\"INVALID_ARGUMENT\",\"message\":\"Unknown command: unknown\"}\n" {
