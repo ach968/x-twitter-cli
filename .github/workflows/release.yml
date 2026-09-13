@@ -24,12 +24,6 @@ jobs:
           cache-dependency-path: go.sum
       - name: Run deterministic checks
         run: make check
-      - name: Run browser integration tests
-        shell: bash
-        run: |
-          browser_path="$(command -v chromium || command -v chromium-browser || command -v google-chrome)"
-          test -n "$browser_path"
-          make test-browser-race CHROMIUM="$browser_path"
       - name: Build archives and publish the GitHub release
         uses: goreleaser/goreleaser-action@v7
         with:

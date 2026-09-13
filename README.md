@@ -210,6 +210,10 @@ make check-browser
 controlled local pages. It defaults to `/usr/bin/chromium`; override it with
 `make check-browser CHROMIUM=/path/to/chromium` when needed.
 
+Hosted CI runs `make check` plus `govulncheck`. Browser integration remains a
+local release gate so runner-specific Chromium sandbox behavior cannot obscure
+the deterministic CI signal.
+
 Authenticated live-X tests are an explicit, local release gate and must not run
 in ordinary CI:
 
