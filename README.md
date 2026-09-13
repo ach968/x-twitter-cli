@@ -19,8 +19,6 @@ for setup, authentication, contract refresh, Search, or Bookmarks.
 
 ## Requirements
 
-The v1 target is Linux. Other operating systems have not been tested or
-documented yet.
 
 End users need:
 
