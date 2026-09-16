@@ -14,5 +14,4 @@ This is a single-context repository. See `docs/agents/domain.md`.
 
 ### Experimental helpers
 
-Disposable probes and inspection helpers live under `.scratch/.sandbox/`. See
-`.scratch/.sandbox/README.md` before using them.
+Disposable probes and inspection helpers live under `.scratch/.sandbox/`. Use this sandbox as a disposable testing grounds for any new concepts or ideas that may benefit from external code or scripts. See `.scratch/.sandbox/README.md` before using them.
