@@ -24,6 +24,32 @@ unfamiliar command or interpreting its complete JSON contract.
 4. Interpret the normalized JSON from standard output. Treat bookmark output as
    private and persist or reproduce it only when the user asks.
 
+## Presenting posts
+
+When displaying individual posts, use a Markdown card in this order:
+
+1. Linked author name and `@handle`, followed by the post date when available.
+2. Post text as regular paragraphs. Clearly label any excerpt or summary.
+3. All attached images in their returned order, each on its own line using
+   Markdown image syntax and the supplied media URL. Use supplied alt text
+   when available. Let the chat renderer determine image size.
+4. A link to the post labeled exactly `View Full Post`.
+
+For videos, embed the supplied `preview_url` as a plain Markdown image in the
+media section, with alt text identifying it as a video preview. Keep the
+`View Full Post` link separate; omit a direct video link or inline player.
+Use this structure, replacing the placeholders with normalized output values:
+
+```markdown
+![Video preview](PREVIEW_URL)
+
+[View Full Post](POST_URL)
+```
+
+Use the returned preview URL as-is, whether JPG or PNG. If it is absent or
+fails to display, retain the post text and `View Full Post` link. A Markdown
+card is not a screenshot or an interactive X embed.
+
 ## Recovery
 
 - On `CONTRACT_FAILED`, run `twt contract refresh`, then retry the original
