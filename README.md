@@ -108,6 +108,18 @@ checksum file on [GitHub Releases](https://github.com/ach968/x-twitter-cli/relea
 Installing the binary does not launch a browser, download Chromium, change
 Codex configuration, or authenticate to X.
 
+### Agent skill
+
+Install the [x-twitter-cli skill](skills/x-twitter-cli/SKILL.md) with `npx`:
+
+```bash
+npx skills@latest add ach968/x-twitter-cli
+```
+
+Follow the interactive prompts to choose your agents and installation scope.
+The skill supplies agent instructions; install `twt` separately and complete
+the setup and authentication below.
+
 ## First-time setup and authentication
 
 Prepare the managed Chromium revision:
