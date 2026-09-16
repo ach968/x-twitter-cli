@@ -1,6 +1,6 @@
 ---
 name: x-twitter-cli
-description: Use the local twt CLI for read-only X Search and Bookmarks requests, pagination, authentication status, and bounded contract recovery.
+description: Use the local twt CLI for read-only X Search, post links and conversations, Bookmarks, pagination, authentication status, and bounded contract recovery.
 ---
 
 # X Twitter CLI
@@ -22,9 +22,13 @@ when interpreting its complete JSON contract; it links to the output schemas.
 2. Choose the narrowest data command for the request:
    - Public X search: `twt search` with the requested query and tab.
    - Saved posts: `twt bookmarks`, adding `--search` only when requested.
+   - A post link or ID: `twt view <url-or-id>` for the post and one conversation page.
    - Local readiness: `twt contract status`.
 3. Run one page unless the user requested further pagination. Pass every cursor
-   back unchanged with the same query and search tab.
+   back unchanged with the same query and search tab, or the same requested post
+   for View. With View, retain earlier pages: later pages can omit `post` and
+   ancestors while returning more replies. `partial` and warnings indicate known
+   page gaps; a next cursor alone is normal pagination.
 4. Interpret the normalized JSON from standard output. Treat bookmark output as
    private and persist or reproduce it only when the user asks.
 

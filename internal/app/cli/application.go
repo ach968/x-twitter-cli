@@ -11,12 +11,14 @@ import (
 	bookmarkscommand "github.com/ach968/x-twitter-cli/internal/app/cli/dependencies/commands/bookmarks"
 	managementcommand "github.com/ach968/x-twitter-cli/internal/app/cli/dependencies/commands/management"
 	searchcommand "github.com/ach968/x-twitter-cli/internal/app/cli/dependencies/commands/search"
+	viewcommand "github.com/ach968/x-twitter-cli/internal/app/cli/dependencies/commands/view"
 	"github.com/ach968/x-twitter-cli/internal/app/management"
 )
 
 type Dependencies struct {
 	Search     searchcommand.Requester
 	Bookmarks  bookmarkscommand.Requester
+	View       viewcommand.Requester
 	Management management.Service
 	Version    string
 }
@@ -34,6 +36,7 @@ func New(dependencies Dependencies) *Application {
 	application := &Application{commands: make(map[string]commands.Command), version: version}
 	application.commands["search"] = searchcommand.New(dependencies.Search)
 	application.commands["bookmarks"] = bookmarkscommand.New(dependencies.Bookmarks)
+	application.commands["view"] = viewcommand.New(dependencies.View)
 	application.commands["setup"] = managementcommand.NewSetup(dependencies.Management)
 	application.commands["auth"] = managementcommand.NewAuth(dependencies.Management)
 	application.commands["contract"] = managementcommand.NewContract(dependencies.Management)
@@ -63,5 +66,5 @@ func (application *Application) Run(ctx context.Context, arguments []string, std
 }
 
 func writeRootHelp(output io.Writer) {
-	_, _ = io.WriteString(output, "Usage: twt <command> [options]\n\nCommands:\n  search      Search X\n  bookmarks   List or search bookmarked posts\n  setup       Prepare managed Chromium\n  auth        Manage X authentication\n  contract    Inspect or refresh operation contracts\n  version     Print the installed version\n\nRun 'twt <command> --help' for command help.\n")
+	_, _ = io.WriteString(output, "Usage: twt <command> [options]\n\nCommands:\n  search      Search X\n  bookmarks   List or search bookmarked posts\n  view        View a post and its conversation\n  setup       Prepare managed Chromium\n  auth        Manage X authentication\n  contract    Inspect or refresh operation contracts\n  version     Print the installed version\n\nRun 'twt <command> --help' for command help.\n")
 }

@@ -17,6 +17,15 @@ func runApplication(arguments ...string) (int, string, string) {
 	return status, stdout.String(), stderr.String()
 }
 
+func TestViewHelpIsAvailableWithoutAuthentication(t *testing.T) {
+	for _, args := range [][]string{{"view", "--help"}, {"help", "view"}} {
+		code, stdout, stderr := runApplication(args...)
+		if code != 0 || stderr != "" || !strings.Contains(stdout, "twt view <url-or-id>") {
+			t.Fatalf("code=%d stdout=%s stderr=%s", code, stdout, stderr)
+		}
+	}
+}
+
 type controlledManagement struct {
 	calls []string
 }

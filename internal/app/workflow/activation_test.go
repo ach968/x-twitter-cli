@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -28,6 +29,7 @@ type transportFunc struct {
 	search         func(app.PreparedRequest) (app.UpstreamResponse, error)
 	bookmarks      func(app.PreparedRequest) (app.UpstreamResponse, error)
 	bookmarkSearch func(app.PreparedRequest) (app.UpstreamResponse, error)
+	view           func(app.PreparedRequest) (app.UpstreamResponse, error)
 }
 
 func (transport transportFunc) Execute(_ context.Context, operation app.OperationName, request app.PreparedRequest) (app.UpstreamResponse, error) {
@@ -40,8 +42,46 @@ func (transport transportFunc) Execute(_ context.Context, operation app.Operatio
 		return transport.bookmarks(request)
 	case app.BookmarkSearchTimeline:
 		return transport.bookmarkSearch(request)
+	case app.TweetDetail:
+		return transport.view(request)
 	default:
 		return app.UpstreamResponse{}, nil
+	}
+}
+
+func TestViewCandidateMustReturnRequestedPostBeforeActivation(t *testing.T) {
+	for _, valid := range []bool{false, true} {
+		t.Run(fmt.Sprint(valid), func(t *testing.T) {
+			directory := t.TempDir()
+			active := filepath.Join(directory, "active.json")
+			candidate := filepath.Join(directory, "candidate.json")
+			old := testContracts()
+			writeContracts(t, active, old)
+			before, _ := os.ReadFile(active)
+			newer := testContracts()
+			newer.Operations[app.TweetDetail] = app.OperationContract{Family: "graphql", Host: "x.com", Path: "/i/api/graphql/detail/TweetDetail", Method: "GET", Encoding: "query", Variables: map[string]any{"focalTweetId": "100"}, Features: map[string]any{}, FieldToggles: map[string]any{}}
+			writeContracts(t, candidate, newer)
+			transport := successfulTransport()
+			calls := 0
+			transport.view = func(request app.PreparedRequest) (app.UpstreamResponse, error) {
+				calls++
+				body := `{"data":{}}`
+				if valid {
+					body = `{"data":{"threaded_conversation_with_injections_v2":{"instructions":[{"type":"TimelineAddEntries","entries":[{"entryId":"tweet-100","content":{"entryType":"TimelineTimelineItem","itemContent":{"itemType":"TimelineTweet","tweet_results":{"result":{"rest_id":"100","legacy":{"full_text":"synthetic"}}}}}}]}]}}}`
+				}
+				return app.UpstreamResponse{Status: 200, Body: body}, nil
+			}
+			result, err := ValidateAndActivateCandidate(context.Background(), candidate, active, app.AuthenticationState{}, transport, testTransactionIDs)
+			if err != nil || result.Activated != valid || calls != 1 {
+				t.Fatalf("activated=%t calls=%d err=%v", result.Activated, calls, err)
+			}
+			if !valid {
+				after, _ := os.ReadFile(active)
+				if string(after) != string(before) {
+					t.Fatal("invalid View replaced active contracts")
+				}
+			}
+		})
 	}
 }
 

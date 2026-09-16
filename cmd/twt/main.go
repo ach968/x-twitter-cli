@@ -7,6 +7,7 @@ import (
 
 	bookmarkscommand "github.com/ach968/x-twitter-cli/cmd/twt/dependencies/commands/bookmarks"
 	searchcommand "github.com/ach968/x-twitter-cli/cmd/twt/dependencies/commands/search"
+	viewcommand "github.com/ach968/x-twitter-cli/cmd/twt/dependencies/commands/view"
 	"github.com/ach968/x-twitter-cli/internal/app/cli"
 	"github.com/ach968/x-twitter-cli/internal/app/cli/dependencies/commands"
 	"github.com/ach968/x-twitter-cli/internal/app/management"
@@ -29,7 +30,7 @@ func main() {
 	if err != nil {
 		os.Exit(commands.WriteFailure(os.Stderr, "LOCAL_STATE_UNAVAILABLE", "Unable to resolve local application state"))
 	}
-	application := cli.New(cli.Dependencies{Search: searchcommand.New(), Bookmarks: bookmarkscommand.New(), Management: managementService, Version: installedVersion()})
+	application := cli.New(cli.Dependencies{Search: searchcommand.New(), Bookmarks: bookmarkscommand.New(), View: viewcommand.New(), Management: managementService, Version: installedVersion()})
 	status := application.Run(context.Background(), os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
 	os.Exit(status)
 }

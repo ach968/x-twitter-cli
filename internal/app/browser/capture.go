@@ -19,6 +19,7 @@ type ContractCaptureStep struct {
 	URL                   string
 	WaitFor               []app.OperationName
 	TriggerBookmarkSearch bool
+	TriggerPostView       bool
 }
 
 type ContractCaptureOptions struct {
@@ -163,6 +164,9 @@ func captureOperation(request *proto.NetworkRequest) (*capturedOperationResult, 
 		}
 	}
 	authorization, _ := networkHeader(request.Headers, "authorization")
+	if name == app.TweetDetail {
+		delete(variables, "cursor")
+	}
 	return &capturedOperationResult{Name: name, Contract: app.OperationContract{
 		Family: "graphql", Host: parsed.Hostname(), Path: parsed.Path, Method: request.Method, Encoding: encoding,
 		Body: body, Variables: variables, Features: features, FieldToggles: fieldToggles,
@@ -171,11 +175,37 @@ func captureOperation(request *proto.NetworkRequest) (*capturedOperationResult, 
 
 func supportedCaptureOperation(name app.OperationName) bool {
 	switch name {
-	case app.HomeTimeline, app.SearchTimeline, app.Bookmarks, app.BookmarkSearchTimeline:
+	case app.HomeTimeline, app.SearchTimeline, app.Bookmarks, app.BookmarkSearchTimeline, app.TweetDetail:
 		return true
 	default:
 		return false
 	}
+}
+
+// triggerPostView opens a post actually present on the current search page,
+// avoiding a permanent dependency on a hard-coded public post remaining available.
+func triggerPostView(page *rod.Page) error {
+	link, err := page.Element(`article a[href*="/status/"]:has(time)`)
+	if err != nil {
+		return errors.New("Unable to find a post for View contract capture")
+	}
+	href, err := link.Attribute("href")
+	if err != nil || href == nil {
+		return errors.New("Unable to read the post link for View contract capture")
+	}
+	info, err := page.Info()
+	if err != nil {
+		return err
+	}
+	base, err := url.Parse(info.URL)
+	if err != nil {
+		return err
+	}
+	target, err := base.Parse(*href)
+	if err != nil || target.Scheme != base.Scheme || target.Host != base.Host || !strings.Contains(target.Path, "/status/") {
+		return errors.New("Unexpected post link during View contract capture")
+	}
+	return page.Navigate(target.String())
 }
 
 // triggerBookmarkSearch contains the X-page interaction recipe. Callers only
@@ -327,6 +357,14 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 		}
 		if err = waitForOperations(step.WaitFor); err != nil {
 			return result, err
+		}
+		if step.TriggerPostView {
+			if err = triggerPostView(page); err != nil {
+				return result, err
+			}
+			if err = waitForOperations([]app.OperationName{app.TweetDetail}); err != nil {
+				return result, err
+			}
 		}
 		if step.TriggerBookmarkSearch {
 			if err = triggerBookmarkSearch(page); err != nil {

@@ -2,11 +2,13 @@ package workflow
 
 import (
 	"context"
+	"errors"
 	"os"
 
 	app "github.com/ach968/x-twitter-cli/internal/app"
 	"github.com/ach968/x-twitter-cli/internal/app/contracts"
 	"github.com/ach968/x-twitter-cli/internal/app/httpclient"
+	"github.com/ach968/x-twitter-cli/internal/app/operations/view"
 )
 
 type ContractActivationResult struct {
@@ -36,6 +38,20 @@ func ValidateAndActivateCandidate(ctx context.Context, candidatePath, activePath
 		}
 		if !result.OK {
 			return ContractActivationResult{Activated: false, Failure: result.Error, Upstream: result.Upstream}, nil
+		}
+	}
+	if contract, present := properties.Operations[app.TweetDetail]; present {
+		postID, ok := contract.Variables["focalTweetId"].(string)
+		if !ok || postID == "" {
+			return ContractActivationResult{Failure: contracts.UnavailableFailure()}, nil
+		}
+		_, err := view.New(view.NewDirectSource(requestClient)).Execute(ctx, view.Request{PostID: postID})
+		if err != nil {
+			var failure *app.OperationFailure
+			if errors.As(err, &failure) {
+				return ContractActivationResult{Failure: failure}, nil
+			}
+			return ContractActivationResult{}, err
 		}
 	}
 	if err := os.Rename(candidatePath, activePath); err != nil {

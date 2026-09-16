@@ -35,7 +35,10 @@ func serviceOptions(paths state.StatePaths) management.Options {
 
 type successfulTransport struct{}
 
-func (successfulTransport) Execute(context.Context, app.OperationName, app.PreparedRequest) (app.UpstreamResponse, error) {
+func (successfulTransport) Execute(_ context.Context, operation app.OperationName, _ app.PreparedRequest) (app.UpstreamResponse, error) {
+	if operation == app.TweetDetail {
+		return app.UpstreamResponse{Status: 200, Body: `{"data":{"threaded_conversation_with_injections_v2":{"instructions":[{"type":"TimelineAddEntries","entries":[{"entryId":"tweet-100","content":{"entryType":"TimelineTimelineItem","itemContent":{"itemType":"TimelineTweet","tweet_results":{"result":{"rest_id":"100","legacy":{"full_text":"synthetic"}}}}}}]}]}}}`}, nil
+	}
 	return app.UpstreamResponse{Status: 200, Body: `{"data":{"ok":true}}`}, nil
 }
 
@@ -58,12 +61,27 @@ func capturedState() app.CapturedState {
 				Family: "graphql", Host: "x.com", Path: "/i/api/graphql/bookmark-search/BookmarkSearchTimeline", Method: "GET", Encoding: "query",
 				Variables: map[string]any{}, Features: map[string]any{}, FieldToggles: map[string]any{},
 			},
+			app.TweetDetail: {Family: "graphql", Host: "x.com", Path: "/i/api/graphql/view/TweetDetail", Method: "GET", Encoding: "query", Variables: map[string]any{"focalTweetId": "100"}, Features: map[string]any{}, FieldToggles: map[string]any{}},
 		},
 		},
 		Authentication: app.AuthenticationState{
 			Cookies:       []app.AuthenticationCookie{{Name: "auth_token", Value: "auth"}, {Name: "ct0", Value: "csrf"}},
 			Authorization: "Bearer public-client-token",
 		},
+	}
+}
+
+func TestRefreshCannotDropViewFromNewCapture(t *testing.T) {
+	paths := testPaths(t)
+	options := serviceOptions(paths)
+	options.Capture = func(browser.ContractCaptureOptions) (app.CapturedState, error) {
+		captured := capturedState()
+		delete(captured.Contracts.Operations, app.TweetDetail)
+		return captured, nil
+	}
+	_, err := management.New(options).RefreshContracts(context.Background())
+	if err == nil {
+		t.Fatal("refresh accepted a capture without View")
 	}
 }
 
@@ -83,6 +101,9 @@ func TestLoginCapturesPersistsAndActivatesState(t *testing.T) {
 		}
 		if len(options.Steps) != 2 || options.Steps[1].URL != "https://x.com/i/bookmarks" || !options.Steps[1].TriggerBookmarkSearch {
 			t.Fatalf("bookmark capture recipe = %#v", options.Steps)
+		}
+		if !options.Steps[0].TriggerPostView {
+			t.Fatal("View was omitted from login capture")
 		}
 		return capturedState(), nil
 	}

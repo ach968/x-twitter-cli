@@ -80,6 +80,38 @@ is documented in the [Bookmarks contract](bookmarks-page-contract.md) and
 Bookmark output is private account data. Redirect or persist it only when that
 is intentional.
 
+## View
+
+```text
+twt view <url-or-id> [--cursor value]
+```
+
+Read a post, its available parent chain, and one page of replies beneath it:
+
+```bash
+twt view 'https://x.com/InternetH0F/status/2100261836654309833'
+twt view 2100261836654309833 --cursor 'opaque-continuation-value'
+```
+
+Pass one positive decimal ID or an HTTP/HTTPS status link on `x.com` or
+`twitter.com`, including their `www` and `mobile` hosts. Status paths may use
+`/<handle>/status/<id>`, `/i/status/<id>`, or `/i/web/status/<id>`, with an optional
+trailing slash or `/photo/<index>` or `/video/<index>` suffix. Sharing query
+parameters and fragments are ignored; the post ID identifies the post even if
+the handle is outdated. IDs must fit an unsigned 64-bit integer and have no
+leading zero. Unrelated URLs, explicit ports, user information, encoded paths,
+and empty cursors are rejected before a request.
+
+View returns `post_id`, `post`, `ancestors`, `replies`, `next_cursor`, `partial`,
+and `warnings`. Replies preserve X's order. Continue explicitly with the same
+post and X's unchanged `next_cursor`. A later page can omit `post` and ancestors;
+retain the first page if you need that context. See the
+[conversation page contract](view-page-contract.md) and
+[JSON Schema](view-page.schema.json) for partial-result and failure semantics.
+
+Existing installations may need `twt contract refresh` before using View.
+Search and Bookmarks retain their existing contract requirements.
+
 ## Browser setup
 
 ```text
@@ -99,7 +131,7 @@ twt auth login
 
 Checks the isolated application profile headlessly and opens managed Chromium
 only when X requires interactive login or a challenge. After authentication,
-the command captures and validates the Search and Bookmarks contracts before
+the command captures and validates the Search, Bookmarks, and View contracts before
 activating the new local authentication and contract state.
 
 ## Contract maintenance

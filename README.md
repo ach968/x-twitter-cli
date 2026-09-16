@@ -8,13 +8,14 @@
 [![License: MIT](https://img.shields.io/github/license/ach968/x-twitter-cli)](LICENSE)
 
 `x-twitter-cli` is an unofficial, local, read-only command-line client for X.
-The `twt` executable provides stable JSON output for public search and the
-authenticated account's bookmarks without exposing X's private response
+The `twt` executable provides stable JSON output for public search, post
+conversations, and the authenticated account's bookmarks without exposing X's private response
 formats to callers.
 
 The v1 command surface is:
 
 - `twt search` for Top, Latest, People, Media, and Lists search results.
+- `twt view <url-or-id>` for a post, its parent chain, and paginated replies.
 - `twt bookmarks` for listing or searching the authenticated account's saved
   posts.
 - `twt setup`, `twt auth`, and `twt contract` for local browser,
@@ -143,8 +144,8 @@ Authentication uses a dedicated Chromium profile owned by `twt`, not the
 user's everyday browser profile. The command first checks that profile
 headlessly. If X requires a login or interactive challenge, it opens a headed
 Chromium window for the user to complete the flow. Once authenticated, it
-captures the current Search and Bookmarks request contracts, verifies that the
-three required read operations work, and activates the new local state only
+captures the current Search, Bookmarks, and View request contracts, verifies that
+the four read operations work, and activates the new local state only
 after validation succeeds.
 
 By default, sensitive and generated state is stored at:
@@ -205,7 +206,7 @@ flowchart TD
     Chromium --> Web["X web application"]
     Web --> Credentials["authentication.json<br/>private, mode 0600"]
     Web --> Contracts["contracts.json<br/>non-secret, mode 0600"]
-    Credentials --> Commands["twt search<br/>twt bookmarks"]
+    Credentials --> Commands["twt search<br/>twt bookmarks<br/>twt view"]
     Contracts --> Commands
     TransactionIDs["x-client-transaction-id-go"] --> Commands
     Commands --> Reads["X private read operations"]

@@ -67,6 +67,21 @@ func TestLoadAcceptsRequiredOperationsWithoutOptionalHomeTimeline(t *testing.T) 
 	}
 }
 
+func TestLoadSupportsViewWithoutMakingItRequiredForExistingCommands(t *testing.T) {
+	props := testContracts()
+	props.Operations[app.TweetDetail] = app.OperationContract{Family: "graphql", Host: "x.com", Path: "/i/api/graphql/view-id/TweetDetail", Method: "GET", Encoding: "query", Variables: map[string]any{"focalTweetId": "100"}, Features: map[string]any{}, FieldToggles: map[string]any{}}
+	path := filepath.Join(t.TempDir(), "contracts.json")
+	writeContracts(t, path, props)
+	if _, err := Load(path); err != nil {
+		t.Fatal(err)
+	}
+	delete(props.Operations, app.TweetDetail)
+	writeContracts(t, path, props)
+	if _, err := Load(path); err != nil {
+		t.Fatalf("old contracts invalid: %v", err)
+	}
+}
+
 func TestLoadRejectsInvalidProperties(t *testing.T) {
 	cases := []struct {
 		name string

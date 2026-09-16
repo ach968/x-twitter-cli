@@ -166,7 +166,7 @@ func (manager *Manager) capture(headless bool, timeout time.Duration) (app.Captu
 		Headless:    headless,
 		Timeout:     timeout,
 		Steps: []browser.ContractCaptureStep{
-			{URL: "https://x.com/search?q=x&src=typed_query", WaitFor: []app.OperationName{app.SearchTimeline}},
+			{URL: "https://x.com/search?q=x&src=typed_query", WaitFor: []app.OperationName{app.SearchTimeline}, TriggerPostView: true},
 			{URL: "https://x.com/i/bookmarks", WaitFor: []app.OperationName{app.Bookmarks}, TriggerBookmarkSearch: true},
 		},
 	})
@@ -199,6 +199,9 @@ func (manager *Manager) initializeTransactionIDs(ctx context.Context) <-chan tra
 }
 
 func (manager *Manager) persistAndActivate(ctx context.Context, capture app.CapturedState, generator app.TransactionIDGenerator) error {
+	if _, present := capture.Contracts.Operations[app.TweetDetail]; !present {
+		return contracts.UnavailableFailure()
+	}
 	paths := manager.options.Paths
 	if err := state.SaveCaptured(paths.CandidateContractPath, paths.AuthenticationPath, capture); err != nil {
 		return err

@@ -22,6 +22,7 @@ var supportedOperations = map[app.OperationName]struct{}{
 	app.SearchTimeline:         {},
 	app.Bookmarks:              {},
 	app.BookmarkSearchTimeline: {},
+	app.TweetDetail:            {},
 }
 
 const invalidOperationsMessage = "Contract properties must contain every required operation and no unsupported operations"

@@ -9,6 +9,7 @@ const (
 	SearchTimeline         OperationName = "SearchTimeline"
 	Bookmarks              OperationName = "Bookmarks"
 	BookmarkSearchTimeline OperationName = "BookmarkSearchTimeline"
+	TweetDetail            OperationName = "TweetDetail"
 )
 
 type OperationContract struct {

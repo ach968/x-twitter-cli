@@ -32,6 +32,22 @@ _Avoid_: SearchTimeline response, timeline instructions, API payload
 A normalized post, user, or list returned on a search page. Its kind is independent of the selected search tab.
 _Avoid_: Timeline entry, module, conversation result
 
+**Requested post**:
+The post identified by the caller's link or post ID. It is the focus of conversation retrieval and may itself be a reply.
+_Avoid_: Root post, first result
+
+**Parent chain**:
+The sequence of posts reached by following the requested post's reply relationships toward the original post. Replies on other branches are not part of this chain.
+_Avoid_: Entire thread, all replies
+
+**Conversation page**:
+The available requested post, parent chain, and replies beneath that post returned by one conversation read. Later pages can contain additional replies without repeating the requested post or parent chain.
+_Avoid_: Entire conversation, complete thread
+
+**Partial conversation page**:
+A conversation page with known gaps in its surrounding content. The existence of another page, or the normal omission of the requested post on a later page, is not such a gap.
+_Avoid_: Failed request, complete conversation
+
 **Bookmarked post**:
 A normalized post returned because the authenticated identity saved it. Its position reflects X's bookmark order, which is distinct from the post's creation time.
 _Avoid_: Bookmark record, saved tweet
@@ -49,7 +65,7 @@ A compact account identity embedded in another search result, such as a post aut
 _Avoid_: User summary, embedded profile
 
 **Next cursor**:
-An opaque continuation value for requesting the next page of results for the same search and tab. Its internal direction and encoding belong to X's timeline protocol.
+An opaque continuation value for requesting the next page of the same operation with the same selection, such as a search query and tab or a requested post. Its internal direction and encoding belong to X's timeline protocol.
 _Avoid_: Bottom cursor, page number
 
 **Community note**:

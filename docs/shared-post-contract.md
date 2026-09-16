@@ -3,7 +3,7 @@
 The normalized post is the stable object returned by any read operation that
 returns posts. It is defined machine-readably in
 [`shared-post.schema.json`](./shared-post.schema.json). Search pages and
-Bookmark pages reference this contract; their timeline instructions, cursors,
+Bookmark and Conversation pages reference this contract; their timeline instructions, cursors,
 warnings, and other page policy are operation-specific.
 
 Every post contains `type: "post"`, a string `id`, `url`, `text`, `author`,

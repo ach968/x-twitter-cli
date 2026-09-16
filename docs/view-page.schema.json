@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:x-twitter-cli:schema:view-page",
+  "title": "x-twitter-cli conversation page",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["post_id", "post", "ancestors", "replies", "next_cursor", "partial", "warnings"],
+  "properties": {
+    "post_id": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+    "post": { "anyOf": [{ "$ref": "urn:x-twitter-cli:schema:shared-post#/$defs/post" }, { "type": "null" }] },
+    "ancestors": { "type": "array", "items": { "$ref": "urn:x-twitter-cli:schema:shared-post#/$defs/post" } },
+    "replies": { "type": "array", "items": { "$ref": "urn:x-twitter-cli:schema:shared-post#/$defs/post" } },
+    "next_cursor": { "type": ["string", "null"], "minLength": 1 },
+    "partial": { "type": "boolean" },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "enum": ["UNSUPPORTED_CONVERSATION_ITEM", "UNSUPPORTED_CONVERSATION_INSTRUCTION", "UNSUPPORTED_CONVERSATION_CURSOR", "INCOMPLETE_PARENT_CHAIN", "UNKNOWN_REPLY_RELATIONSHIP"] },
+          "message": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

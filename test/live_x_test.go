@@ -16,6 +16,7 @@ import (
 	"github.com/ach968/x-twitter-cli/internal/app/contracts"
 	"github.com/ach968/x-twitter-cli/internal/app/httpclient"
 	"github.com/ach968/x-twitter-cli/internal/app/operations/search"
+	"github.com/ach968/x-twitter-cli/internal/app/operations/view"
 	"github.com/ach968/x-twitter-cli/internal/app/state"
 )
 
@@ -143,7 +144,7 @@ func TestLiveAuthenticatedProfileExecutesAllRequiredOperations(t *testing.T) {
 				Headless:    true,
 				Timeout:     45 * time.Second,
 				Steps: []browser.ContractCaptureStep{
-					{URL: "https://x.com/search?q=x&src=typed_query", WaitFor: []app.OperationName{app.SearchTimeline}},
+					{URL: "https://x.com/search?q=x&src=typed_query", WaitFor: []app.OperationName{app.SearchTimeline}, TriggerPostView: true},
 					{URL: "https://x.com/i/bookmarks", WaitFor: []app.OperationName{app.Bookmarks}, TriggerBookmarkSearch: true},
 				},
 			})
@@ -172,6 +173,29 @@ func TestLiveAuthenticatedProfileExecutesAllRequiredOperations(t *testing.T) {
 	transport := httpclient.NewTransport(nil)
 	t.Run("required_operation_verification", func(t *testing.T) {
 		requestClient := httpclient.New(capture.Contracts, capture.Authentication, transport, initialization.generator)
+		t.Run("view_over_direct_http", func(t *testing.T) {
+			contract, ok := capture.Contracts.Operations[app.TweetDetail]
+			if !ok {
+				t.Fatal("View contract was not captured")
+			}
+			postID, ok := contract.Variables["focalTweetId"].(string)
+			if !ok || postID == "" {
+				t.Fatal("View capture has no target")
+			}
+			operation := view.New(view.NewDirectSource(requestClient))
+			page, err := operation.Execute(context.Background(), view.Request{PostID: postID})
+			if err != nil {
+				t.Fatalf("View initial request failed: %v", err)
+			}
+			if _, err := json.Marshal(page); err != nil {
+				t.Fatal("View page cannot be encoded")
+			}
+			if page.NextCursor != nil {
+				if _, err := operation.Execute(context.Background(), view.Request{PostID: postID, Cursor: page.NextCursor}); err != nil {
+					t.Fatalf("View continuation failed: %v", err)
+				}
+			}
+		})
 		type outcome struct {
 			result   app.OperationResult
 			err      error
