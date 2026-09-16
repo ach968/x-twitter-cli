@@ -8,13 +8,17 @@ description: Use the local twt CLI for read-only X Search and Bookmarks requests
 Use `twt` as the interface to X. It owns authentication, private-operation
 details, normalization, and safe failures. No X developer API key is needed.
 
-Read the [command reference](../../docs/commands.md) before constructing an
-unfamiliar command or interpreting its complete JSON contract.
+Use `twt <command> --help` for the installed binary's command syntax. Read the
+[command reference](https://github.com/ach968/x-twitter-cli/blob/main/docs/commands.md)
+when interpreting its complete JSON contract; it links to the output schemas.
 
 ## Workflow
 
 1. Confirm `twt` is available with `command -v twt`. If it is absent, report
-   the installation command from the command reference.
+   `go install github.com/ach968/x-twitter-cli/cmd/twt@latest` and the
+   [installation instructions](https://github.com/ach968/x-twitter-cli#install)
+   for PATH setup and prebuilt binaries. The skill installer installs agent
+   instructions only; the `twt` binary and X authentication are separate.
 2. Choose the narrowest data command for the request:
    - Public X search: `twt search` with the requested query and tab.
    - Saved posts: `twt bookmarks`, adding `--search` only when requested.
@@ -34,6 +38,13 @@ When displaying individual posts, use a Markdown card in this order:
    Markdown image syntax and the supplied media URL. Use supplied alt text
    when available. Let the chat renderer determine image size.
 4. A link to the post labeled exactly `View Full Post`.
+
+In post text, render each `@handle` that matches an entry in the post's
+`mentions` as a Markdown link to that entry's `url`, for example
+`[@NASA](https://x.com/NASA)`. Match complete handles case-insensitively and
+preserve their spelling in the text. Apply this to quoted-post captions too,
+using that quoted post's own `mentions`. Leave unmatched handles or mentions
+without a profile URL as plain text.
 
 For videos, embed the supplied `preview_url` as a plain Markdown image in the
 media section, with alt text identifying it as a video preview. Keep the
