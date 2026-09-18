@@ -250,3 +250,35 @@ func TestContractStatusInspectsLocalFilesWithoutCapturing(t *testing.T) {
 		t.Fatalf("ready status=%#v", ready)
 	}
 }
+
+func TestRefreshCapturePlanCoversCatalogRequirements(t *testing.T) {
+	options := serviceOptions(testPaths(t))
+	called := false
+	options.Capture = func(options browser.ContractCaptureOptions) (app.CapturedState, error) {
+		called = true
+		covered := map[app.OperationName]bool{}
+		for _, step := range options.Steps {
+			if step.URL == "" {
+				t.Error("capture step has no navigation")
+			}
+			for _, name := range step.CapturedOperations() {
+				if _, ok := app.LookupOperation(name); !ok {
+					t.Errorf("capture plan includes unsupported operation %s", name)
+				}
+				covered[name] = true
+			}
+		}
+		for _, policy := range app.OperationPolicies() {
+			if policy.Refresh == app.Required && !covered[policy.Name] {
+				t.Errorf("required operation %s has no capture step", policy.Name)
+			}
+		}
+		return capturedState(), nil
+	}
+	if _, err := management.New(options).RefreshContracts(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if !called {
+		t.Fatal("refresh did not use the capture plan")
+	}
+}

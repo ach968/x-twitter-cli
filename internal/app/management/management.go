@@ -199,8 +199,10 @@ func (manager *Manager) initializeTransactionIDs(ctx context.Context) <-chan tra
 }
 
 func (manager *Manager) persistAndActivate(ctx context.Context, capture app.CapturedState, generator app.TransactionIDGenerator) error {
-	if _, present := capture.Contracts.Operations[app.TweetDetail]; !present {
-		return contracts.UnavailableFailure()
+	for _, policy := range app.OperationPolicies() {
+		if _, present := capture.Contracts.Operations[policy.Name]; policy.Refresh == app.Required && !present {
+			return contracts.UnavailableFailure()
+		}
 	}
 	paths := manager.options.Paths
 	if err := state.SaveCaptured(paths.CandidateContractPath, paths.AuthenticationPath, capture); err != nil {

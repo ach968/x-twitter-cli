@@ -3,7 +3,6 @@ package workflow
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -50,8 +49,19 @@ func (transport transportFunc) Execute(_ context.Context, operation app.Operatio
 }
 
 func TestViewCandidateMustReturnRequestedPostBeforeActivation(t *testing.T) {
-	for _, valid := range []bool{false, true} {
-		t.Run(fmt.Sprint(valid), func(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		status int
+		body   string
+		code   string
+	}{
+		{name: "valid", status: 200, body: `{"data":{"threaded_conversation_with_injections_v2":{"instructions":[{"type":"TimelineAddEntries","entries":[{"entryId":"tweet-100","content":{"entryType":"TimelineTimelineItem","itemContent":{"itemType":"TimelineTweet","tweet_results":{"result":{"rest_id":"100","legacy":{"full_text":"synthetic"}}}}}}]}]}}}`},
+		{name: "missing target", status: 200, body: `{"data":{}}`, code: "RESPONSE_SHAPE_CHANGED"},
+		{name: "graphql rejection", status: 200, body: `{"errors":[{"message":"rejected"}]}`, code: "UPSTREAM_REJECTED"},
+		{name: "rate limit", status: 429, body: `{"errors":[]}`, code: "RATE_LIMITED"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			valid := test.code == ""
 			directory := t.TempDir()
 			active := filepath.Join(directory, "active.json")
 			candidate := filepath.Join(directory, "candidate.json")
@@ -65,17 +75,22 @@ func TestViewCandidateMustReturnRequestedPostBeforeActivation(t *testing.T) {
 			calls := 0
 			transport.view = func(request app.PreparedRequest) (app.UpstreamResponse, error) {
 				calls++
-				body := `{"data":{}}`
-				if valid {
-					body = `{"data":{"threaded_conversation_with_injections_v2":{"instructions":[{"type":"TimelineAddEntries","entries":[{"entryId":"tweet-100","content":{"entryType":"TimelineTimelineItem","itemContent":{"itemType":"TimelineTweet","tweet_results":{"result":{"rest_id":"100","legacy":{"full_text":"synthetic"}}}}}}]}]}}}`
+				if request.Headers["x-client-transaction-id"] != "" {
+					t.Fatal("View validation must not generate a transaction ID")
 				}
-				return app.UpstreamResponse{Status: 200, Body: body}, nil
+				return app.UpstreamResponse{Status: test.status, Body: test.body}, nil
 			}
 			result, err := ValidateAndActivateCandidate(context.Background(), candidate, active, app.AuthenticationState{}, transport, testTransactionIDs)
 			if err != nil || result.Activated != valid || calls != 1 {
 				t.Fatalf("activated=%t calls=%d err=%v", result.Activated, calls, err)
 			}
 			if !valid {
+				if result.Failure == nil || result.Failure.Code != test.code {
+					t.Fatalf("failure=%#v", result.Failure)
+				}
+				if test.status != 200 && (result.Upstream == nil || result.Upstream.Status != test.status) {
+					t.Fatal("upstream failure was lost")
+				}
 				after, _ := os.ReadFile(active)
 				if string(after) != string(before) {
 					t.Fatal("invalid View replaced active contracts")
@@ -206,4 +221,40 @@ func TestValidateAndActivateCandidateDoesNotRequireHomeTimeline(t *testing.T) {
 	if err != nil || len(loaded.Operations) != 3 {
 		t.Fatalf("active contracts = %#v, %v", loaded, err)
 	}
+}
+
+// This exercises the real activation workflow for every catalog entry. Adding
+// an activation requirement without a validation request must fail this test.
+func TestEveryCatalogActivationCheckIsWired(t *testing.T) {
+	properties := app.ContractProperties{Version: 1, Operations: map[app.OperationName]app.OperationContract{}}
+	for _, policy := range app.OperationPolicies() {
+		properties.Operations[policy.Name] = app.OperationContract{Family: "graphql", Host: "x.com", Path: "/i/api/graphql/test/" + string(policy.Name), Method: "GET", Encoding: "query", Variables: map[string]any{"focalTweetId": "100"}, Features: map[string]any{}, FieldToggles: map[string]any{}}
+	}
+	directory := t.TempDir()
+	candidate := filepath.Join(directory, "candidate.json")
+	writeContracts(t, candidate, properties)
+	calls := map[app.OperationName]int{}
+	transport := catalogTransport(func(operation app.OperationName) (app.UpstreamResponse, error) {
+		calls[operation]++
+		return app.UpstreamResponse{Status: 200, Body: `{"data":{"threaded_conversation_with_injections_v2":{"instructions":[{"type":"TimelineAddEntries","entries":[{"entryId":"tweet-100","content":{"entryType":"TimelineTimelineItem","itemContent":{"itemType":"TimelineTweet","tweet_results":{"result":{"rest_id":"100","legacy":{"full_text":"synthetic"}}}}}}]}]}}}`}, nil
+	})
+	result, err := ValidateAndActivateCandidate(context.Background(), candidate, filepath.Join(directory, "active.json"), app.AuthenticationState{}, transport, testTransactionIDs)
+	if err != nil || !result.Activated {
+		t.Fatalf("activation=%#v err=%v", result, err)
+	}
+	for _, policy := range app.OperationPolicies() {
+		want := 0
+		if policy.Activation == app.Required {
+			want = 1
+		}
+		if calls[policy.Name] != want {
+			t.Errorf("%s validation calls=%d want=%d", policy.Name, calls[policy.Name], want)
+		}
+	}
+}
+
+type catalogTransport func(app.OperationName) (app.UpstreamResponse, error)
+
+func (transport catalogTransport) Execute(_ context.Context, operation app.OperationName, _ app.PreparedRequest) (app.UpstreamResponse, error) {
+	return transport(operation)
 }

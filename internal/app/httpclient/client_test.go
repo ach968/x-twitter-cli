@@ -109,7 +109,7 @@ func TestClientPreparesQueryOperations(t *testing.T) {
 		},
 	}
 	transactionIDs := transactionIDFunc(func(method, path string) (string, error) {
-		if method != http.MethodGet || (path != "/i/api/graphql/search-id/SearchTimeline" && path != "/i/api/graphql/home-id/HomeTimeline") {
+		if method != http.MethodGet || path != "/i/api/graphql/search-id/SearchTimeline" {
 			t.Fatalf("generated for %s %s", method, path)
 		}
 		return "generated-id", nil
@@ -129,7 +129,7 @@ func TestClientPreparesQueryOperations(t *testing.T) {
 	}
 	wantHeaders := map[string]string{
 		"authorization": "Bearer public-web-token", "cookie": "auth_token=session-token; ct0=csrf-token", "x-csrf-token": "csrf-token",
-		"x-twitter-active-user": "yes", "x-twitter-auth-type": "OAuth2Session", "x-client-transaction-id": "generated-id",
+		"x-twitter-active-user": "yes", "x-twitter-auth-type": "OAuth2Session",
 	}
 	if !reflect.DeepEqual(homeRequest.Headers, wantHeaders) {
 		t.Fatalf("headers = %#v", homeRequest.Headers)
@@ -241,4 +241,30 @@ func TestTransportErrorPropagates(t *testing.T) {
 	if !errors.Is(err, want) {
 		t.Fatalf("got %v", err)
 	}
+}
+
+func TestOperationsWithoutTransactionIDsIgnoreGenerator(t *testing.T) {
+	for _, operation := range []app.OperationName{app.Bookmarks, app.BookmarkSearchTimeline, app.TweetDetail} {
+		t.Run(string(operation), func(t *testing.T) {
+			properties := testContracts()
+			properties.Operations[operation] = properties.Operations[app.SearchTimeline]
+			client := New(properties, app.AuthenticationState{}, policyTransport{t: t}, transactionIDFunc(func(string, string) (string, error) {
+				t.Fatal("generator called for operation without transaction IDs")
+				return "", nil
+			}))
+			result, err := client.Execute(context.Background(), operation, nil)
+			if err != nil || !result.OK {
+				t.Fatalf("result=%#v err=%v", result, err)
+			}
+		})
+	}
+}
+
+type policyTransport struct{ t *testing.T }
+
+func (transport policyTransport) Execute(_ context.Context, _ app.OperationName, request app.PreparedRequest) (app.UpstreamResponse, error) {
+	if request.Headers["x-client-transaction-id"] != "" {
+		transport.t.Error("unexpected transaction ID")
+	}
+	return app.UpstreamResponse{Status: 200, Body: `{"data":{}}`}, nil
 }

@@ -29,8 +29,5 @@ func (source directSource) Fetch(ctx context.Context, request Request) (any, err
 		}
 		return nil, failed()
 	}
-	if failures, ok := objectValue(result.Payload, "errors").([]any); ok && len(failures) > 0 {
-		return nil, &app.OperationFailure{Code: "UPSTREAM_REJECTED", Message: "X could not return the requested conversation page"}
-	}
 	return result.Payload, nil
 }

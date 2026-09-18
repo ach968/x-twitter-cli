@@ -45,7 +45,7 @@ func (operation *Operation) Execute(ctx context.Context, request Request) (Page,
 		}
 		return Page{}, failed()
 	}
-	return decodePage(payload, request)
+	return DecodePage(payload, request)
 }
 func failed() *app.OperationFailure {
 	return &app.OperationFailure{Code: "VIEW_FAILED", Message: "Unable to view the requested post"}
@@ -63,7 +63,12 @@ func objectValue(value any, keys ...string) any {
 	}
 	return value
 }
-func decodePage(payload any, request Request) (Page, error) {
+
+// DecodePage normalizes an already-fetched conversation response.
+func DecodePage(payload any, request Request) (Page, error) {
+	if failures, ok := objectValue(payload, "errors").([]any); ok && len(failures) > 0 {
+		return Page{}, &app.OperationFailure{Code: "UPSTREAM_REJECTED", Message: "X could not return the requested conversation page"}
+	}
 	page := Page{PostID: request.PostID, Ancestors: []models.Post{}, Replies: []models.Post{}, Warnings: []Warning{}}
 	instructions, ok := objectValue(payload, "data", "threaded_conversation_with_injections_v2", "instructions").([]any)
 	if !ok {

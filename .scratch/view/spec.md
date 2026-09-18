@@ -127,11 +127,13 @@ cursor interpretation, and page warnings.
 
 ## Authentication, contracts, and recovery
 
-Use the existing direct HTTP client and transaction ID generator. Execute one
+Use the existing direct HTTP client without a transaction ID generator for View. Execute one
 TweetDetail data request per View invocation. This reuses authentication state;
 it does not perform a fresh interactive login or start a browser to fulfill
-ordinary View calls. Normal frontend initialization for transaction IDs remains
-the shared client's concern.
+ordinary View calls. View does not initialize the frontend transaction ID
+generator. Other operations retain their own generator requirements. This
+supersedes the original generator choice following the user's requested
+with/without comparison on 2026-09-16; see the evidence audit.
 
 Add TweetDetail to supported contracts and to authentication/explicit-refresh
 capture and validation. Override only caller-owned semantic variables:
@@ -168,10 +170,9 @@ pre-existing local skill edits before changing those files.
   returns actionable recovery, new refresh captures and validates TweetDetail,
   failed activation preserves prior contracts, and page cursors are not saved.
 - Run repository-required formatting and relevant tests, including `make check`.
-  Extend explicit local live verification to exercise semantic View success
-  with valid authentication. Do not assert specific account contents, reply
-  counts, or identities. Use a live-accessible target rather than treating this
-  example post as permanently available; never print raw authenticated payloads.
+  View's automated coverage uses deterministic operation, command, schema, and
+  contract tests. Keep exploratory authenticated View checks in `.scratch/.sandbox/`;
+  do not add View cases to `test/live_x_test.go` or `test/browser_test.go`.
 
 Deeper source variants remain implementation evidence work. The user-visible
 fallback for unrecognized surrounding content is the accepted partial-page
@@ -198,12 +199,11 @@ Implementation is complete.
 
 ## Implementation verification (2026-09-16)
 
-- TDD covered command input/output, the View operation, contract loading and
-  activation, and Chromium capture. Tests use synthetic source data.
+- TDD covered command input/output, the View operation, and contract loading and
+  activation. Retained tests use synthetic source data.
 - `make check` passed formatting, vet, and the full deterministic race suite.
-- Chromium capture regression tests passed with the race detector.
-- The opt-in authenticated live suite passed initial View and available
-  continuation reads using a target discovered during capture.
+- View-specific browser and live suite cases were subsequently removed at the
+  user's request. Production capture and activation behavior remains in place.
 - The actual CLI passed initial, continuation, and reply-target checks for the
   supplied example. Ordinary continuation omission and a known unsupported
   surrounding item were represented correctly; no raw payloads were retained.

@@ -22,6 +22,31 @@ type ContractCaptureStep struct {
 	TriggerPostView       bool
 }
 
+type captureAction struct {
+	operation app.OperationName
+	run       func(*rod.Page) error
+}
+
+func (step ContractCaptureStep) actions() []captureAction {
+	var actions []captureAction
+	if step.TriggerPostView {
+		actions = append(actions, captureAction{app.TweetDetail, triggerPostView})
+	}
+	if step.TriggerBookmarkSearch {
+		actions = append(actions, captureAction{app.BookmarkSearchTimeline, triggerBookmarkSearch})
+	}
+	return actions
+}
+
+// CapturedOperations lists the responses this step waits for, including actions.
+func (step ContractCaptureStep) CapturedOperations() []app.OperationName {
+	names := append([]app.OperationName(nil), step.WaitFor...)
+	for _, action := range step.actions() {
+		names = append(names, action.operation)
+	}
+	return names
+}
+
 type ContractCaptureOptions struct {
 	ProfilePath string
 	Headless    bool
@@ -120,7 +145,7 @@ func captureOperation(request *proto.NetworkRequest) (*capturedOperationResult, 
 		return nil, nil
 	}
 	name := app.OperationName(parts[4])
-	if !supportedCaptureOperation(name) {
+	if _, supported := app.LookupOperation(name); !supported {
 		return nil, nil
 	}
 	if request.Method != "GET" && request.Method != "POST" {
@@ -171,15 +196,6 @@ func captureOperation(request *proto.NetworkRequest) (*capturedOperationResult, 
 		Family: "graphql", Host: parsed.Hostname(), Path: parsed.Path, Method: request.Method, Encoding: encoding,
 		Body: body, Variables: variables, Features: features, FieldToggles: fieldToggles,
 	}, Authorization: authorization}, nil
-}
-
-func supportedCaptureOperation(name app.OperationName) bool {
-	switch name {
-	case app.HomeTimeline, app.SearchTimeline, app.Bookmarks, app.BookmarkSearchTimeline, app.TweetDetail:
-		return true
-	default:
-		return false
-	}
 }
 
 // triggerPostView opens a post actually present on the current search page,
@@ -358,27 +374,20 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 		if err = waitForOperations(step.WaitFor); err != nil {
 			return result, err
 		}
-		if step.TriggerPostView {
-			if err = triggerPostView(page); err != nil {
+		for _, action := range step.actions() {
+			if err = action.run(page); err != nil {
 				return result, err
 			}
-			if err = waitForOperations([]app.OperationName{app.TweetDetail}); err != nil {
-				return result, err
-			}
-		}
-		if step.TriggerBookmarkSearch {
-			if err = triggerBookmarkSearch(page); err != nil {
-				return result, err
-			}
-			if err = waitForOperations([]app.OperationName{app.BookmarkSearchTimeline}); err != nil {
+			if err = waitForOperations([]app.OperationName{action.operation}); err != nil {
 				return result, err
 			}
 		}
 	}
-	requiredNames := []app.OperationName{
-		app.SearchTimeline,
-		app.Bookmarks,
-		app.BookmarkSearchTimeline,
+	var requiredNames []app.OperationName
+	for _, policy := range app.OperationPolicies() {
+		if policy.ContractFile == app.Required {
+			requiredNames = append(requiredNames, policy.Name)
+		}
 	}
 	if err = waitForOperations(requiredNames); err != nil {
 		return result, err

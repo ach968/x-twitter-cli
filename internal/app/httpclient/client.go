@@ -22,6 +22,10 @@ func New(contracts app.ContractProperties, authentication app.AuthenticationStat
 // semantic variables they override; this client owns authenticated request
 // mechanics and source-level failure classification.
 func (client *Client) Execute(ctx context.Context, operation app.OperationName, overrides map[string]any) (app.OperationResult, error) {
+	policy, supported := app.LookupOperation(operation)
+	if !supported {
+		return app.OperationResult{}, errors.New("operation is unsupported")
+	}
 	contract, ok := client.contracts.Operations[operation]
 	if !ok {
 		return app.OperationResult{}, errors.New("operation contract is unavailable")
@@ -30,7 +34,7 @@ func (client *Client) Execute(ctx context.Context, operation app.OperationName, 
 	if err != nil {
 		return app.OperationResult{}, err
 	}
-	if client.transactionIDs != nil {
+	if policy.TransactionID == app.Required && client.transactionIDs != nil {
 		if err := addTransactionID(&request, client.transactionIDs); err != nil {
 			return app.OperationResult{}, err
 		}

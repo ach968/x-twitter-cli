@@ -11,20 +11,6 @@ import (
 	app "github.com/ach968/x-twitter-cli/internal/app"
 )
 
-var requiredOperations = []app.OperationName{
-	app.SearchTimeline,
-	app.Bookmarks,
-	app.BookmarkSearchTimeline,
-}
-
-var supportedOperations = map[app.OperationName]struct{}{
-	app.HomeTimeline:           {},
-	app.SearchTimeline:         {},
-	app.Bookmarks:              {},
-	app.BookmarkSearchTimeline: {},
-	app.TweetDetail:            {},
-}
-
 const invalidOperationsMessage = "Contract properties must contain every required operation and no unsupported operations"
 
 type ContractPropertiesError struct {
@@ -117,19 +103,15 @@ func Load(path string) (app.ContractProperties, error) {
 	if err != nil || operationRaw == nil {
 		return app.ContractProperties{}, newContractPropertiesError("Operations must be an object")
 	}
-	if len(operationRaw) < len(requiredOperations) || len(operationRaw) > len(supportedOperations) {
-		return app.ContractProperties{}, newContractPropertiesError(invalidOperationsMessage)
-	}
-
 	properties := app.ContractProperties{Version: version, Operations: make(map[app.OperationName]app.OperationContract, len(operationRaw))}
-	for _, name := range requiredOperations {
-		if _, ok := operationRaw[string(name)]; !ok {
+	for _, policy := range app.OperationPolicies() {
+		if _, present := operationRaw[string(policy.Name)]; policy.ContractFile == app.Required && !present {
 			return app.ContractProperties{}, newContractPropertiesError(invalidOperationsMessage)
 		}
 	}
 	for rawName, encoded := range operationRaw {
 		name := app.OperationName(rawName)
-		if _, ok := supportedOperations[name]; !ok {
+		if _, ok := app.LookupOperation(name); !ok {
 			return app.ContractProperties{}, newContractPropertiesError(invalidOperationsMessage)
 		}
 		var operation app.OperationContract

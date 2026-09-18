@@ -12,7 +12,7 @@ The `twt` executable provides stable JSON output for public search, post
 conversations, and the authenticated account's bookmarks without exposing X's private response
 formats to callers.
 
-The v1 command surface is:
+The current command surface is:
 
 - `twt search` for Top, Latest, People, Media, and Lists search results.
 - `twt view <url-or-id>` for a post, its parent chain, and paginated replies.
@@ -214,7 +214,7 @@ flowchart TD
 ```
 
 Chromium is used only to establish authentication and discover X's current
-private request descriptions. Search and Bookmarks commands subsequently load
+private request descriptions. Search, Bookmarks, and View commands subsequently load
 the local authentication and contract files, generate any required volatile
 transaction metadata, send the corresponding request directly to X, and
 normalize X's timeline-shaped response into the documented JSON contracts.
@@ -228,8 +228,9 @@ operations stable: X may change or remove them at any time.
 
 ```text
 cmd/twt/                  executable and production dependency wiring
+cmd/twt/dependencies/runtime/ shared deferred startup for data commands
 internal/app/cli/         command routing, validation, rendering, and exits
-internal/app/operations/  Search and Bookmarks policy and normalization
+internal/app/operations/  Search, Bookmarks, and View policy and normalization
 internal/app/httpclient/  authenticated direct-request mechanics
 internal/app/browser/     managed Chromium, profile, and contract capture
 internal/app/contracts/   local contract-file validation
@@ -240,6 +241,9 @@ docs/                     output contracts, design history, and agent guidance
 .scratch/                 local specifications, issues, and disposable experiments
 .scratch/.sandbox/        experimental helpers outside the public CLI surface
 ```
+
+Shared operation rules live in the [operation catalog](internal/app/operation_catalog.go).
+See [adding an operation](docs/operation-lifecycle.md) for ownership and wiring checks.
 
 Run deterministic release checks:
 

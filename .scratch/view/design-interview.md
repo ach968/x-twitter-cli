@@ -43,7 +43,7 @@
    - Upstream operation and focal-post identification.
    - Contract capture, validation, and recovery integration.
 4. Compatibility and verification (depends on the above)
-   - Existing model coverage; failures; live smoke and fixtures.
+   - Existing model coverage; failures; deterministic tests and sandbox probes.
 5. Shared-understanding confirmation (after the frontier is empty)
 
 ## Round 1

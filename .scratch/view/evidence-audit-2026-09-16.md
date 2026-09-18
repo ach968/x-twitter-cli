@@ -111,3 +111,24 @@ and live checks used system Chromium; the initial managed-Chromium attempt
 opened onboarding and was stopped. Applying existing stored authentication to
 the application profile allowed the system-Chromium refresh to complete. No
 credentials or ordinary source payloads were printed or retained in this audit.
+
+## Transaction ID requirement comparison
+
+At the user's request, `.scratch/.sandbox/viewtransaction/main.go` compared
+TweetDetail requests with and without `x-client-transaction-id`, using the same
+saved authentication, captured contract, and shared transport. The transport
+observed header presence directly; success required HTTP 200, valid JSON, and
+successful View normalization.
+
+All eight requests passed:
+
+- Initial, continuation, and reply-target reads each passed both with and without
+  a generated header (six requests).
+- A repeated initial read and the separate post selected during contract capture
+  also passed without the header (two requests).
+
+Known partial-page warnings were consistent between paired reads. This supports
+omitting the generator for View now, including its CLI, contract activation, and
+live verification. It is current empirical evidence, not a guarantee that X's
+private request requirements will never change. No post text, cursor values,
+authentication values, or full transaction IDs were logged by the probe.

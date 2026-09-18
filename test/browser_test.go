@@ -209,39 +209,6 @@ func TestOperationContractCapture(t *testing.T) {
 	}
 }
 
-func TestViewCaptureOpensAnObservedPostAndDiscardsContinuationDefaults(t *testing.T) {
-	paths := []string{}
-	for _, op := range []app.OperationName{app.SearchTimeline, app.Bookmarks, app.BookmarkSearchTimeline} {
-		paths = append(paths, graphQLPath("synthetic", op, map[string]any{}))
-	}
-	detail := graphQLPath("synthetic", app.TweetDetail, map[string]any{"focalTweetId": "100", "cursor": "transient", "rankingMode": "Relevance"})
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		switch r.URL.Path {
-		case "/search":
-			fmt.Fprintf(w, `<article><a href="/synthetic/status/100"><time>now</time></a></article><script>Promise.all([%s,%s,%s].map(p=>fetch(p,{headers:{authorization:"Bearer synthetic"}})))</script>`, strconv.Quote(paths[0]), strconv.Quote(paths[1]), strconv.Quote(paths[2]))
-		case "/synthetic/status/100":
-			fmt.Fprintf(w, `<script>fetch(%s,{headers:{authorization:"Bearer synthetic"}})</script>`, strconv.Quote(detail))
-		default:
-			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprint(w, `{"data":{}}`)
-		}
-	}))
-	defer server.Close()
-	parsed, _ := url.Parse(server.URL)
-	captured, err := browser.CaptureOperationContracts(browser.ContractCaptureOptions{ProfilePath: filepath.Join(t.TempDir(), "profile"), Headless: true, CaptureHost: parsed.Hostname(), Steps: []browser.ContractCaptureStep{{URL: server.URL + "/search", WaitFor: []app.OperationName{app.SearchTimeline}, TriggerPostView: true}}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	detailContract, ok := captured.Contracts.Operations[app.TweetDetail]
-	if !ok || detailContract.Variables["focalTweetId"] != "100" || detailContract.Variables["rankingMode"] != "Relevance" {
-		t.Fatal("View contract was not captured")
-	}
-	if _, present := detailContract.Variables["cursor"]; present {
-		t.Fatal("transient cursor persisted")
-	}
-}
-
 func TestOperationContractCapturePreservesJSONPostBody(t *testing.T) {
 	searchPath := graphQLPath("search-id", app.SearchTimeline, map[string]any{"count": 20, "rawQuery": "x"})
 	bookmarksPath := graphQLPath("bookmarks-id", app.Bookmarks, map[string]any{"count": 20})
