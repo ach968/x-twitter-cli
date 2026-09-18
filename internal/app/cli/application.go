@@ -40,6 +40,7 @@ func New(dependencies Dependencies) *Application {
 	application.commands["setup"] = managementcommand.NewSetup(dependencies.Management)
 	application.commands["auth"] = managementcommand.NewAuth(dependencies.Management)
 	application.commands["contract"] = managementcommand.NewContract(dependencies.Management)
+	application.commands["version"] = newVersionCommand(version)
 	return application
 }
 
@@ -48,8 +49,8 @@ func (application *Application) Run(ctx context.Context, arguments []string, std
 		writeRootHelp(stdout)
 		return commands.ExitSuccess
 	}
-	if len(arguments) == 1 && (arguments[0] == "version" || arguments[0] == "--version") {
-		_, _ = fmt.Fprintf(stdout, "twt %s\n", application.version)
+	if len(arguments) == 1 && arguments[0] == "--version" {
+		writeVersion(stdout, application.version)
 		return commands.ExitSuccess
 	}
 	if len(arguments) == 2 && arguments[0] == "help" {
@@ -67,4 +68,29 @@ func (application *Application) Run(ctx context.Context, arguments []string, std
 
 func writeRootHelp(output io.Writer) {
 	_, _ = io.WriteString(output, "Usage: twt <command> [options]\n\nCommands:\n  search      Search X\n  bookmarks   List or search bookmarked posts\n  view        View a post and its conversation\n  setup       Prepare managed Chromium\n  auth        Manage X authentication\n  contract    Inspect or refresh operation contracts\n  version     Print the installed version\n\nRun 'twt <command> --help' for command help.\n")
+}
+
+func newVersionCommand(version string) commands.Command {
+	return commands.Command{
+		Run: func(_ context.Context, arguments []string, _ io.Reader, stdout, stderr io.Writer) int {
+			if len(arguments) == 1 && (arguments[0] == "--help" || arguments[0] == "-h" || arguments[0] == "help") {
+				writeVersionHelp(stdout)
+				return commands.ExitSuccess
+			}
+			if len(arguments) != 0 {
+				return commands.WriteFailure(stderr, "INVALID_ARGUMENT", "version does not accept arguments")
+			}
+			writeVersion(stdout, version)
+			return commands.ExitSuccess
+		},
+		WriteHelp: writeVersionHelp,
+	}
+}
+
+func writeVersion(output io.Writer, version string) {
+	_, _ = fmt.Fprintf(output, "twt %s\n", version)
+}
+
+func writeVersionHelp(output io.Writer) {
+	_, _ = io.WriteString(output, "Usage: twt version\n\nPrint the installed version. Tagged release binaries report their release tag; local development builds report dev. `twt --version` is equivalent.\n")
 }
