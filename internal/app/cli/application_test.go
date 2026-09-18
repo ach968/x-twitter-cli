@@ -92,6 +92,7 @@ func TestHelpIsHumanReadableAndSuccessful(t *testing.T) {
 		{"setup", "--help"}, {"help", "setup"},
 		{"auth", "--help"}, {"auth", "login", "--help"}, {"help", "auth"},
 		{"contract", "--help"}, {"contract", "refresh", "--help"}, {"contract", "status", "--help"}, {"help", "contract"},
+		{"version", "--help"}, {"version", "-h"}, {"help", "version"},
 	} {
 		status, stdout, stderr := runApplication(arguments...)
 		if status != 0 || stderr != "" || !strings.Contains(stdout, "Usage:") {
@@ -108,6 +109,13 @@ func TestVersionIsHumanReadableAndSuccessful(t *testing.T) {
 		if status != 0 || stderr.String() != "" || stdout.String() != "twt v1.2.3\n" {
 			t.Fatalf("arguments %q: status=%d stdout=%q stderr=%q", arguments, status, stdout.String(), stderr.String())
 		}
+	}
+}
+
+func TestVersionRejectsArguments(t *testing.T) {
+	status, stdout, stderr := runApplication("version", "extra")
+	if status == 0 || stdout != "" || stderr != "{\"code\":\"INVALID_ARGUMENT\",\"message\":\"version does not accept arguments\"}\n" {
+		t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
 	}
 }
 
