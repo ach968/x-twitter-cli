@@ -27,7 +27,7 @@ func serviceOptions(paths state.StatePaths) management.Options {
 			return browser.ChromiumSetupResult{Status: "ready", ExecutablePath: "/managed/chromium"}, nil
 		},
 		Transport: successfulTransport{},
-		NewTransactionIDs: func(context.Context) (app.TransactionIDGenerator, error) {
+		NewTransactionIDs: func(context.Context, app.AuthenticationState) (app.TransactionIDGenerator, error) {
 			return transactionIDs(func(string, string) (string, error) { return "generated", nil }), nil
 		},
 	}
@@ -223,6 +223,23 @@ func TestContractRefreshUsesHeadedBrowserOnlyWhenAuthenticationIsRequired(t *tes
 	}
 	if len(headlessValues) != 1 || !headlessValues[0] {
 		t.Fatalf("unknown failure unexpectedly opened headed browser: %v", headlessValues)
+	}
+}
+
+func TestContractRefreshUsesFreshCapturedAuthenticationForTransactionIDs(t *testing.T) {
+	paths := testPaths(t)
+	options := serviceOptions(paths)
+	options.Capture = func(browser.ContractCaptureOptions) (app.CapturedState, error) {
+		return capturedState(), nil
+	}
+	options.NewTransactionIDs = func(_ context.Context, auth app.AuthenticationState) (app.TransactionIDGenerator, error) {
+		if len(auth.Cookies) != 2 || auth.Cookies[0].Value != "auth" || auth.Cookies[1].Value != "csrf" {
+			t.Fatal("generator did not receive freshly captured authentication")
+		}
+		return transactionIDs(func(string, string) (string, error) { return "generated", nil }), nil
+	}
+	if _, err := management.New(options).RefreshContracts(context.Background()); err != nil {
+		t.Fatal(err)
 	}
 }
 

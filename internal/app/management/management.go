@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	transaction "github.com/ach968/x-client-transaction-id-go"
 	app "github.com/ach968/x-twitter-cli/internal/app"
 	"github.com/ach968/x-twitter-cli/internal/app/browser"
 	"github.com/ach968/x-twitter-cli/internal/app/contracts"
@@ -22,7 +21,7 @@ type Options struct {
 	EnsureChromium    func(browser.ChromiumSetupOptions) (browser.ChromiumSetupResult, error)
 	Capture           func(browser.ContractCaptureOptions) (app.CapturedState, error)
 	Transport         app.XTransport
-	NewTransactionIDs func(context.Context) (app.TransactionIDGenerator, error)
+	NewTransactionIDs func(context.Context, app.AuthenticationState) (app.TransactionIDGenerator, error)
 }
 
 type Manager struct {
@@ -40,9 +39,7 @@ func New(options Options) *Manager {
 		options.Transport = httpclient.NewTransport(nil)
 	}
 	if options.NewTransactionIDs == nil {
-		options.NewTransactionIDs = func(ctx context.Context) (app.TransactionIDGenerator, error) {
-			return transaction.New(ctx, nil)
-		}
+		options.NewTransactionIDs = httpclient.NewTransactionIDGenerator
 	}
 	return &Manager{options: options}
 }
@@ -81,20 +78,15 @@ func (manager *Manager) Login(ctx context.Context, confirm ConfirmBrowserSetup) 
 	if setup.Status != "ready" {
 		return StateChangeResult{}, fmt.Errorf("managed Chromium %s was declined; run %s", setup.Action, setup.InstallCommand)
 	}
-	generatorContext, cancelGenerator := context.WithCancel(ctx)
-	defer cancelGenerator()
-	generatorResult := manager.initializeTransactionIDs(generatorContext)
 	capture, err := manager.captureWithAuthenticationFallback()
 	if err != nil {
-		cancelGenerator()
-		<-generatorResult
 		return StateChangeResult{}, err
 	}
-	generator := <-generatorResult
-	if generator.err != nil {
-		return StateChangeResult{}, generator.err
+	generator, err := manager.options.NewTransactionIDs(ctx, capture.Authentication)
+	if err != nil {
+		return StateChangeResult{}, err
 	}
-	if err := manager.persistAndActivate(ctx, capture, generator.value); err != nil {
+	if err := manager.persistAndActivate(ctx, capture, generator); err != nil {
 		return StateChangeResult{}, err
 	}
 	return StateChangeResult{
@@ -104,20 +96,15 @@ func (manager *Manager) Login(ctx context.Context, confirm ConfirmBrowserSetup) 
 }
 
 func (manager *Manager) RefreshContracts(ctx context.Context) (StateChangeResult, error) {
-	generatorContext, cancelGenerator := context.WithCancel(ctx)
-	defer cancelGenerator()
-	generatorResult := manager.initializeTransactionIDs(generatorContext)
 	capture, err := manager.captureWithAuthenticationFallback()
 	if err != nil {
-		cancelGenerator()
-		<-generatorResult
 		return StateChangeResult{}, err
 	}
-	generator := <-generatorResult
-	if generator.err != nil {
-		return StateChangeResult{}, generator.err
+	generator, err := manager.options.NewTransactionIDs(ctx, capture.Authentication)
+	if err != nil {
+		return StateChangeResult{}, err
 	}
-	if err := manager.persistAndActivate(ctx, capture, generator.value); err != nil {
+	if err := manager.persistAndActivate(ctx, capture, generator); err != nil {
 		return StateChangeResult{}, err
 	}
 	return StateChangeResult{Status: "refreshed", ContractPath: manager.options.Paths.ActiveContractPath}, nil
@@ -182,20 +169,6 @@ func (manager *Manager) captureWithAuthenticationFallback() (app.CapturedState, 
 		return app.CapturedState{}, err
 	}
 	return manager.capture(false, 10*time.Minute)
-}
-
-type transactionIDResult struct {
-	value app.TransactionIDGenerator
-	err   error
-}
-
-func (manager *Manager) initializeTransactionIDs(ctx context.Context) <-chan transactionIDResult {
-	result := make(chan transactionIDResult, 1)
-	go func() {
-		generator, err := manager.options.NewTransactionIDs(ctx)
-		result <- transactionIDResult{value: generator, err: err}
-	}()
-	return result
 }
 
 func (manager *Manager) persistAndActivate(ctx context.Context, capture app.CapturedState, generator app.TransactionIDGenerator) error {

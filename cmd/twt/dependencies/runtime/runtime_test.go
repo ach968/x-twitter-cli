@@ -65,7 +65,7 @@ func savedState(t *testing.T) state.StatePaths {
 	for _, policy := range app.OperationPolicies() {
 		properties.Operations[policy.Name] = app.OperationContract{Family: "graphql", Host: "x.com", Path: "/i/api/graphql/test/" + string(policy.Name), Method: "GET", Encoding: "query", Variables: map[string]any{}, Features: map[string]any{}, FieldToggles: map[string]any{}}
 	}
-	err := state.SaveCaptured(paths.ActiveContractPath, paths.AuthenticationPath, app.CapturedState{Contracts: properties, Authentication: app.AuthenticationState{Authorization: "synthetic", Cookies: []app.AuthenticationCookie{}}})
+	err := state.SaveCaptured(paths.ActiveContractPath, paths.AuthenticationPath, app.CapturedState{Contracts: properties, Authentication: app.AuthenticationState{Authorization: "synthetic", Cookies: []app.AuthenticationCookie{{Name: "auth_token", Value: "saved-session"}}}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +86,13 @@ func TestOnlyRequiredOperationsInitializeGenerator(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			calls := 0
-			client, err := load(context.Background(), test.operations, func(context.Context) (app.TransactionIDGenerator, error) { calls++; return nil, sentinel })
+			client, err := load(context.Background(), test.operations, func(_ context.Context, auth app.AuthenticationState) (app.TransactionIDGenerator, error) {
+				calls++
+				if len(auth.Cookies) != 1 || auth.Cookies[0].Value != "saved-session" {
+					t.Fatalf("generator received wrong authentication state")
+				}
+				return nil, sentinel
+			})
 			if calls != test.wantCalls {
 				t.Fatalf("generator calls=%d", calls)
 			}
@@ -133,7 +139,7 @@ func TestStartupErrorsPrecedeGeneratorAndOperationConstruction(t *testing.T) {
 			if err := os.Remove(missing); err != nil {
 				t.Fatal(err)
 			}
-			_, err := load(context.Background(), []app.OperationName{app.SearchTimeline}, func(context.Context) (app.TransactionIDGenerator, error) {
+			_, err := load(context.Background(), []app.OperationName{app.SearchTimeline}, func(context.Context, app.AuthenticationState) (app.TransactionIDGenerator, error) {
 				t.Fatal("generator initialized before valid state")
 				return nil, nil
 			})

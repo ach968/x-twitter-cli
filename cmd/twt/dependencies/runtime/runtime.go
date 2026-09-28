@@ -3,7 +3,6 @@ package runtime
 
 import (
 	"context"
-	transaction "github.com/ach968/x-client-transaction-id-go"
 	app "github.com/ach968/x-twitter-cli/internal/app"
 	"github.com/ach968/x-twitter-cli/internal/app/contracts"
 	"github.com/ach968/x-twitter-cli/internal/app/httpclient"
@@ -29,7 +28,7 @@ type Client[Request, Page any] struct {
 func New[Request, Page any](operations []app.OperationName, build func(*httpclient.Client) Requester[Request, Page]) *Client[Request, Page] {
 	operations = append([]app.OperationName(nil), operations...)
 	return &Client[Request, Page]{initialize: func(ctx context.Context) (Requester[Request, Page], error) {
-		client, err := load(ctx, operations, func(ctx context.Context) (app.TransactionIDGenerator, error) { return transaction.New(ctx, nil) })
+		client, err := load(ctx, operations, httpclient.NewTransactionIDGenerator)
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +45,7 @@ func (client *Client[Request, Page]) Execute(ctx context.Context, request Reques
 	return client.client.Execute(ctx, request)
 }
 
-func load(ctx context.Context, operations []app.OperationName, newGenerator func(context.Context) (app.TransactionIDGenerator, error)) (*httpclient.Client, error) {
+func load(ctx context.Context, operations []app.OperationName, newGenerator func(context.Context, app.AuthenticationState) (app.TransactionIDGenerator, error)) (*httpclient.Client, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
@@ -71,7 +70,7 @@ func load(ctx context.Context, operations []app.OperationName, newGenerator func
 	}
 	var generator app.TransactionIDGenerator
 	if needsGenerator {
-		generator, err = newGenerator(ctx)
+		generator, err = newGenerator(ctx, authentication)
 		if err != nil {
 			return nil, err
 		}

@@ -74,7 +74,7 @@ func authenticationRequiredURL(value string) bool {
 		return false
 	}
 	path := strings.ToLower(parsed.Path)
-	return path == "/login" || strings.HasPrefix(path, "/i/flow/login") || strings.HasPrefix(path, "/account/access")
+	return path == "/login" || strings.HasPrefix(path, "/i/flow/login") || path == "/i/jf/onboarding/web" || strings.HasPrefix(path, "/account/access")
 }
 
 func headlessAuthenticationError(client *browserClient) error {
@@ -90,7 +90,7 @@ func headlessAuthenticationError(client *browserClient) error {
 		return nil
 	}
 	host := parsed.Hostname()
-	if host != "x.com" && !strings.HasSuffix(host, ".x.com") {
+	if info.URL != "" && host != "x.com" && !strings.HasSuffix(host, ".x.com") {
 		return nil
 	}
 	cookies, err := client.launched.browser.GetCookies()
@@ -363,6 +363,12 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 	for _, step := range steps {
 		waitForNavigation := page.WaitNavigation(proto.PageLifecycleEventNameDOMContentLoaded)
 		if err = page.Navigate(step.URL); err != nil {
+			parsedStep, parseErr := url.Parse(step.URL)
+			if options.Headless && parseErr == nil && (parsedStep.Hostname() == "x.com" || strings.HasSuffix(parsedStep.Hostname(), ".x.com")) {
+				if authErr := headlessAuthenticationError(client); authErr != nil {
+					return result, authErr
+				}
+			}
 			return result, err
 		}
 		waitForNavigation()

@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -123,18 +124,23 @@ func TestApplicationProfileLockAndStaleRecovery(t *testing.T) {
 	if err := os.MkdirAll(profile, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(profile+".lock", []byte(strconv.Itoa(os.Getpid())+"\n"), 0o600); err != nil {
+	lock, err := os.OpenFile(profile+".lock", os.O_RDWR|os.O_CREATE, 0o600)
+	if err != nil {
 		t.Fatal(err)
 	}
-	_, err := browser.VisitWithApplicationProfile(browser.ApplicationProfileVisit{ProfilePath: profile, Headless: true, URL: server.URL})
+	defer lock.Close()
+	if err := syscall.Flock(int(lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+		t.Fatal(err)
+	}
+	_, err = browser.VisitWithApplicationProfile(browser.ApplicationProfileVisit{ProfilePath: profile, Headless: true, URL: server.URL})
 	var locked *browser.BrowserProfileLockedError
 	if !errors.As(err, &locked) || locked.Code != "BROWSER_PROFILE_LOCKED" {
 		t.Fatalf("expected profile lock error, got %v", err)
 	}
-	if err := os.Remove(profile + ".lock"); err != nil {
+	if err := syscall.Flock(int(lock.Fd()), syscall.LOCK_UN); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(profile+".lock", nil, 0o600); err != nil {
+	if err := os.WriteFile(profile+".lock", []byte(strconv.Itoa(os.Getpid())+"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := browser.VisitWithApplicationProfile(browser.ApplicationProfileVisit{ProfilePath: profile, Headless: true, URL: server.URL}); err != nil {
@@ -145,6 +151,26 @@ func TestApplicationProfileLockAndStaleRecovery(t *testing.T) {
 	}
 	if _, err := browser.VisitWithApplicationProfile(browser.ApplicationProfileVisit{ProfilePath: profile, Headless: true, URL: server.URL}); err != nil {
 		t.Fatalf("dead-owner lock was not recovered: %v", err)
+	}
+}
+
+func TestNonXNavigationFailureIsNotAuthenticationFailure(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
+		response.WriteHeader(http.StatusForbidden)
+	}))
+	defer server.Close()
+	_, err := browser.CaptureOperationContracts(browser.ContractCaptureOptions{
+		ProfilePath: filepath.Join(t.TempDir(), "profile"),
+		Headless:    true,
+		Timeout:     2 * time.Second,
+		Steps:       []browser.ContractCaptureStep{{URL: server.URL}},
+	})
+	if err == nil {
+		t.Fatal("expected navigation failure")
+	}
+	var authenticationRequired *browser.AuthenticationRequiredError
+	if errors.As(err, &authenticationRequired) {
+		t.Fatalf("non-X navigation was mistaken for X authentication: %v", err)
 	}
 }
 

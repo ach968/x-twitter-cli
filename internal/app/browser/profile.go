@@ -2,10 +2,7 @@ package browser
 
 import (
 	"errors"
-	"fmt"
 	"os"
-	"strconv"
-	"strings"
 	"syscall"
 )
 
@@ -38,41 +35,32 @@ func processIsRunning(pid int) bool {
 	return err == nil || !(errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH))
 }
 
-func acquireProfileLock(profilePath string, mayRecover ...bool) (func() error, error) {
-	recoverStale := true
-	if len(mayRecover) > 0 {
-		recoverStale = mayRecover[0]
-	}
+func acquireProfileLock(profilePath string) (func() error, error) {
 	lockPath := profilePath + ".lock"
-	handle, err := os.OpenFile(lockPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	handle, err := os.OpenFile(lockPath, os.O_RDWR|os.O_CREATE, 0o600)
 	if err != nil {
-		if errors.Is(err, os.ErrExist) {
-			if recoverStale {
-				contents, readErr := os.ReadFile(lockPath)
-				ownerPID, parseErr := strconv.Atoi(strings.TrimSpace(string(contents)))
-				if readErr != nil || parseErr != nil || ownerPID <= 0 || !processIsRunning(ownerPID) {
-					if removeErr := os.Remove(lockPath); removeErr != nil {
-						return nil, removeErr
-					}
-					return acquireProfileLock(profilePath, false)
-				}
-			}
+		return nil, err
+	}
+	if err := syscall.Flock(int(handle.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+		_ = handle.Close()
+		if errors.Is(err, syscall.EWOULDBLOCK) || errors.Is(err, syscall.EAGAIN) {
 			return nil, &BrowserProfileLockedError{Code: "BROWSER_PROFILE_LOCKED", ProfilePath: profilePath}
 		}
 		return nil, err
 	}
-	if _, err := fmt.Fprintf(handle, "%d\n", os.Getpid()); err != nil {
-		handle.Close()
-		os.Remove(lockPath)
+	// Keep the lock file in place: removing it would let another process lock a
+	// new inode while an existing owner still holds this one.
+	if err := handle.Truncate(0); err != nil {
+		_ = syscall.Flock(int(handle.Fd()), syscall.LOCK_UN)
+		_ = handle.Close()
 		return nil, err
 	}
 	return func() error {
-		closeErr := handle.Close()
-		removeErr := os.Remove(lockPath)
-		if closeErr != nil {
+		unlockErr := syscall.Flock(int(handle.Fd()), syscall.LOCK_UN)
+		if closeErr := handle.Close(); unlockErr == nil {
 			return closeErr
 		}
-		return removeErr
+		return unlockErr
 	}, nil
 }
 
