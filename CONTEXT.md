@@ -24,6 +24,14 @@ _Avoid_: Endpoint, GraphQL query
 One of the result selections offered by X search: Top, Latest, People, Media, or Lists. A search tab determines the kind or ordering of results requested from the search operation.
 _Avoid_: Search mode, product
 
+**Home feed**:
+One of the authenticated identity's two home selections: For You or Following. The selection identifies which feed supplies the posts.
+_Avoid_: Search tab, endpoint
+
+**Home page**:
+The normalized posts returned by one read of a selected home feed.
+_Avoid_: HomeTimeline response, raw timeline
+
 **Search page**:
 The stable normalized output of one search request, containing the query, selected search tab, ordered results, continuation value, and non-fatal warnings.
 _Avoid_: SearchTimeline response, timeline instructions, API payload
