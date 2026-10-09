@@ -3,12 +3,17 @@ package management
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
+	app "github.com/ach968/x-twitter-cli/internal/app"
+	"github.com/ach968/x-twitter-cli/internal/app/browser"
 	"github.com/ach968/x-twitter-cli/internal/app/cli/dependencies/commands"
 	managementservice "github.com/ach968/x-twitter-cli/internal/app/management"
+	"golang.org/x/term"
 )
 
 func NewSetup(service managementservice.Service) commands.Command {
@@ -35,7 +40,7 @@ func runSetup(service managementservice.Service) commands.Handler {
 		if service == nil {
 			return commands.WriteFailure(stderr, "SETUP_FAILED", "Unable to set up managed Chromium")
 		}
-		result, err := service.Setup(ctx, browserSetupConfirmation(stdin, stderr))
+		result, err := service.Setup(ctx, browserSetupConfirmation(terminalLoginPrompt(stdin, stderr)))
 		if err != nil {
 			return commands.WriteFailure(stderr, "SETUP_FAILED", "Unable to set up managed Chromium")
 		}
@@ -53,18 +58,45 @@ func runAuth(service managementservice.Service) commands.Handler {
 			WriteAuthHelp(stdout)
 			return commands.ExitSuccess
 		}
-		if len(arguments) != 1 || arguments[0] != "login" {
-			return commands.WriteFailure(stderr, "INVALID_ARGUMENT", "Usage: twt auth login")
+		headless, valid := loginMode(arguments)
+		if !valid {
+			return commands.WriteFailure(stderr, "INVALID_ARGUMENT", "Usage: twt auth login [--headless|--headed]")
 		}
 		if service == nil {
 			return commands.WriteFailure(stderr, "AUTHENTICATION_FAILED", "Unable to authenticate with X")
 		}
-		result, err := service.Login(ctx, browserSetupConfirmation(stdin, stderr))
+		prompt := terminalLoginPrompt(stdin, stderr)
+		options := managementservice.LoginOptions{Headless: headless}
+		if headless {
+			options.Prompt = prompt
+		}
+		result, err := service.Login(ctx, browserSetupConfirmation(prompt), options)
 		if err != nil {
-			return commands.WriteFailure(stderr, "AUTHENTICATION_FAILED", "Unable to authenticate with X")
+			return writeManagementFailure(stderr, err, "AUTHENTICATION_FAILED", "Unable to authenticate with X")
 		}
 		return commands.WriteJSON(stdout, result, commands.ExitSuccess)
 	}
+}
+
+func loginMode(arguments []string) (headless, valid bool) {
+	if len(arguments) == 0 || arguments[0] != "login" || len(arguments) > 2 {
+		return false, false
+	}
+	if len(arguments) == 1 || arguments[1] == "--headed" {
+		return false, true
+	}
+	return arguments[1] == "--headless", arguments[1] == "--headless"
+}
+
+func writeManagementFailure(output io.Writer, err error, code, message string) int {
+	var failure *app.OperationFailure
+	if errors.As(err, &failure) {
+		switch failure.Code {
+		case "AUTHENTICATION_FAILED", "AUTH_CHALLENGE_UNSUPPORTED", "AUTHENTICATION_REQUIRED", "AUTH_RATE_LIMITED", "AUTH_LOGIN_UNAVAILABLE":
+			return commands.WriteFailure(output, failure.Code, failure.Message)
+		}
+	}
+	return commands.WriteFailure(output, code, message)
 }
 
 func runContract(service managementservice.Service) commands.Handler {
@@ -83,7 +115,7 @@ func runContract(service managementservice.Service) commands.Handler {
 		case "refresh":
 			result, err := service.RefreshContracts(ctx)
 			if err != nil {
-				return commands.WriteFailure(stderr, "CONTRACT_REFRESH_FAILED", "Unable to refresh operation contracts")
+				return writeManagementFailure(stderr, err, "CONTRACT_REFRESH_FAILED", "Unable to refresh operation contracts")
 			}
 			return commands.WriteJSON(stdout, result, commands.ExitSuccess)
 		case "status":
@@ -94,32 +126,22 @@ func runContract(service managementservice.Service) commands.Handler {
 	}
 }
 
-func browserSetupConfirmation(input io.Reader, output io.Writer) managementservice.ConfirmBrowserSetup {
-	reader := bufio.NewReader(input)
-	return func(prompt managementservice.BrowserSetupPrompt) (bool, error) {
-		if prompt.Action == "cleanup" {
-			_, _ = fmt.Fprintf(output, "New managed Chromium revision %s is ready. Remove older managed revisions %s? Warning: older twt builds may still require them. [y/N] ", prompt.RequiredRevision, strings.Join(prompt.InstalledRevisions, ", "))
-			return readConfirmation(reader)
-		}
-		action := prompt.Action
-		if action == "" {
-			action = "install"
-		}
-		if len(prompt.InstalledRevisions) > 0 {
-			_, _ = fmt.Fprintf(output, "Managed Chromium revisions %s are installed; revision %s is required. %s now? [y/N] ", strings.Join(prompt.InstalledRevisions, ", "), prompt.RequiredRevision, displayAction(action))
+func browserSetupConfirmation(prompt browser.LoginPromptFunc) managementservice.ConfirmBrowserSetup {
+	return func(setup managementservice.BrowserSetupPrompt) (bool, error) {
+		var label string
+		if setup.Action == "cleanup" {
+			label = fmt.Sprintf("New managed Chromium revision %s is ready. Remove older managed revisions %s? Warning: older twt builds may still require them. [y/N] ", setup.RequiredRevision, strings.Join(setup.InstalledRevisions, ", "))
+		} else if len(setup.InstalledRevisions) > 0 {
+			label = fmt.Sprintf("Managed Chromium revisions %s are installed; revision %s is required. %s now? [y/N] ", strings.Join(setup.InstalledRevisions, ", "), setup.RequiredRevision, displayAction(setup.Action))
 		} else {
-			_, _ = fmt.Fprintf(output, "Managed Chromium revision %s is required. %s now? [y/N] ", prompt.RequiredRevision, displayAction(action))
+			label = fmt.Sprintf("Managed Chromium revision %s is required. %s now? [y/N] ", setup.RequiredRevision, displayAction(setup.Action))
 		}
-		return readConfirmation(reader)
+		answer, err := prompt(browser.LoginPrompt{Label: label})
+		if err != nil && err != io.EOF {
+			return false, err
+		}
+		return strings.EqualFold(strings.TrimSpace(answer), "y") || strings.EqualFold(strings.TrimSpace(answer), "yes"), nil
 	}
-}
-
-func readConfirmation(reader *bufio.Reader) (bool, error) {
-	answer, err := reader.ReadString('\n')
-	if err != nil && len(answer) == 0 && err != io.EOF {
-		return false, err
-	}
-	return strings.EqualFold(strings.TrimSpace(answer), "y") || strings.EqualFold(strings.TrimSpace(answer), "yes"), nil
 }
 
 func displayAction(action string) string {
@@ -142,9 +164,41 @@ func WriteSetupHelp(output io.Writer) {
 }
 
 func WriteAuthHelp(output io.Writer) {
-	_, _ = io.WriteString(output, "Usage: twt auth login\n\nCheck the application profile headlessly, open it headed only when interactive X login is required, then capture and activate operation contracts.\n")
+	_, _ = io.WriteString(output, "Usage: twt auth login [--headless|--headed]\n\nLog in with the application Chromium profile, then capture and activate operation contracts. Headed login is the default and opens a visible browser window. Use --headless to enter credentials and verification codes through terminal prompts.\n")
 }
 
 func WriteContractHelp(output io.Writer) {
 	_, _ = io.WriteString(output, "Usage: twt contract refresh|status\n\nRefresh operation contracts explicitly, or inspect local authentication and contract state without launching Chromium.\n")
+}
+
+func terminalLoginPrompt(input io.Reader, output io.Writer) browser.LoginPromptFunc {
+	reader := bufio.NewReader(input)
+	file, isFile := input.(*os.File)
+	isTerminal := isFile && term.IsTerminal(int(file.Fd()))
+	terminal := term.NewTerminal(struct {
+		io.Reader
+		io.Writer
+	}{input, output}, "")
+	return func(prompt browser.LoginPrompt) (string, error) {
+		if isTerminal {
+			state, err := term.MakeRaw(int(file.Fd()))
+			if err != nil {
+				return "", err
+			}
+			defer term.Restore(int(file.Fd()), state)
+			if prompt.Secret {
+				return terminal.ReadPassword(prompt.Label)
+			}
+			terminal.SetPrompt(prompt.Label)
+			return terminal.ReadLine()
+		}
+		if _, err := io.WriteString(output, prompt.Label); err != nil {
+			return "", err
+		}
+		value, err := reader.ReadString('\n')
+		if err != nil && !(err == io.EOF && len(value) > 0) {
+			return "", err
+		}
+		return strings.TrimSuffix(strings.TrimSuffix(value, "\n"), "\r"), nil
+	}
 }

@@ -9,7 +9,7 @@ A CLI command that reads account or public X data. It requires valid authenticat
 _Avoid_: Browser command, API command
 
 **Authentication state**:
-Locally persisted browser credentials established through interactive X login and loaded by later data commands. It changes independently from operation contracts.
+Locally persisted X credentials established through a visible browser login or headless browser login with terminal prompts and loaded by later data commands. It changes independently from operation contracts.
 _Avoid_: Auth headers, copied cURL, session
 
 **Application profile**:

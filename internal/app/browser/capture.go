@@ -1,6 +1,7 @@
 package browser
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -48,6 +49,9 @@ func (step ContractCaptureStep) CapturedOperations() []app.OperationName {
 }
 
 type ContractCaptureOptions struct {
+	Context     context.Context
+	Login       bool
+	LoginPrompt LoginPromptFunc
 	ProfilePath string
 	Headless    bool
 	URLs        []string
@@ -261,7 +265,10 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 	if options.Timeout == 0 {
 		options.Timeout = 10 * time.Second
 	}
-	client, err := newBrowserClient(options.ProfilePath, options.Headless, options.Timeout)
+	if options.Login && options.Headless && options.LoginPrompt == nil {
+		return result, loginFailure("Headless login requires terminal input")
+	}
+	client, err := newBrowserClient(options.ProfilePath, options.Headless, 0)
 	if err != nil {
 		return result, err
 	}
@@ -270,6 +277,17 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 			err = closeErr
 		}
 	}()
+	if options.Context == nil {
+		options.Context = context.Background()
+	}
+	client.page = client.page.Context(options.Context)
+	if options.Login {
+		if err := authenticateBrowser(client, options.LoginPrompt, loginURL); err != nil {
+			return result, err
+		}
+	}
+	client.page = client.page.Timeout(options.Timeout)
+	defer client.page.CancelTimeout()
 	page := client.page
 	var mutex sync.Mutex
 	operations := map[app.OperationName]app.OperationContract{}
@@ -331,6 +349,8 @@ func CaptureOperationContracts(options ContractCaptureOptions) (result app.Captu
 				return nil
 			}
 			select {
+			case <-options.Context.Done():
+				return options.Context.Err()
 			case <-notify:
 			case <-authenticationTicker.C:
 			case <-timer.C:

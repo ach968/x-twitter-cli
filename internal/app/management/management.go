@@ -70,7 +70,7 @@ func (manager *Manager) Setup(_ context.Context, confirm ConfirmBrowserSetup) (S
 	}, nil
 }
 
-func (manager *Manager) Login(ctx context.Context, confirm ConfirmBrowserSetup) (StateChangeResult, error) {
+func (manager *Manager) Login(ctx context.Context, confirm ConfirmBrowserSetup, options LoginOptions) (StateChangeResult, error) {
 	setup, err := manager.ensureChromium(confirm)
 	if err != nil {
 		return StateChangeResult{}, err
@@ -78,7 +78,7 @@ func (manager *Manager) Login(ctx context.Context, confirm ConfirmBrowserSetup) 
 	if setup.Status != "ready" {
 		return StateChangeResult{}, fmt.Errorf("managed Chromium %s was declined; run %s", setup.Action, setup.InstallCommand)
 	}
-	capture, err := manager.captureWithAuthenticationFallback()
+	capture, err := manager.capture(ctx, options.Headless, true, options.Prompt)
 	if err != nil {
 		return StateChangeResult{}, err
 	}
@@ -96,7 +96,7 @@ func (manager *Manager) Login(ctx context.Context, confirm ConfirmBrowserSetup) 
 }
 
 func (manager *Manager) RefreshContracts(ctx context.Context) (StateChangeResult, error) {
-	capture, err := manager.captureWithAuthenticationFallback()
+	capture, err := manager.capture(ctx, true, false, nil)
 	if err != nil {
 		return StateChangeResult{}, err
 	}
@@ -147,28 +147,28 @@ func (manager *Manager) ensureChromium(confirm ConfirmBrowserSetup) (browser.Chr
 	})
 }
 
-func (manager *Manager) capture(headless bool, timeout time.Duration) (app.CapturedState, error) {
-	return manager.options.Capture(browser.ContractCaptureOptions{
+func (manager *Manager) capture(ctx context.Context, headless, login bool, prompt browser.LoginPromptFunc) (app.CapturedState, error) {
+	capture, err := manager.options.Capture(browser.ContractCaptureOptions{
+		Context:     ctx,
 		ProfilePath: manager.options.Paths.ProfilePath,
 		Headless:    headless,
-		Timeout:     timeout,
+		Login:       login,
+		LoginPrompt: prompt,
+		Timeout:     time.Minute,
 		Steps: []browser.ContractCaptureStep{
 			{URL: "https://x.com/search?q=x&src=typed_query", WaitFor: []app.OperationName{app.SearchTimeline}, TriggerPostView: true},
 			{URL: "https://x.com/i/bookmarks", WaitFor: []app.OperationName{app.Bookmarks}, TriggerBookmarkSearch: true},
 		},
 	})
-}
-
-func (manager *Manager) captureWithAuthenticationFallback() (app.CapturedState, error) {
-	capture, err := manager.capture(true, time.Minute)
-	if err == nil {
-		return capture, nil
-	}
 	var authenticationRequired *browser.AuthenticationRequiredError
-	if !errors.As(err, &authenticationRequired) {
-		return app.CapturedState{}, err
+	if errors.As(err, &authenticationRequired) {
+		return app.CapturedState{}, &app.OperationFailure{
+			Code:            "AUTHENTICATION_REQUIRED",
+			Message:         "X authentication is required; run twt auth login or twt auth login --headed",
+			RecoveryCommand: "twt auth login",
+		}
 	}
-	return manager.capture(false, 10*time.Minute)
+	return capture, err
 }
 
 func (manager *Manager) persistAndActivate(ctx context.Context, capture app.CapturedState, generator app.TransactionIDGenerator) error {

@@ -2,7 +2,11 @@
 // operation-contract maintenance. Data commands do not call this package.
 package management
 
-import "context"
+import (
+	"context"
+
+	"github.com/ach968/x-twitter-cli/internal/app/browser"
+)
 
 type BrowserSetupPrompt struct {
 	Action             string
@@ -11,6 +15,11 @@ type BrowserSetupPrompt struct {
 }
 
 type ConfirmBrowserSetup func(BrowserSetupPrompt) (bool, error)
+
+type LoginOptions struct {
+	Headless bool
+	Prompt   browser.LoginPromptFunc
+}
 
 type SetupResult struct {
 	Status         string `json:"status"`
@@ -38,7 +47,7 @@ type ContractStatus struct {
 
 type Service interface {
 	Setup(context.Context, ConfirmBrowserSetup) (SetupResult, error)
-	Login(context.Context, ConfirmBrowserSetup) (StateChangeResult, error)
+	Login(context.Context, ConfirmBrowserSetup, LoginOptions) (StateChangeResult, error)
 	RefreshContracts(context.Context) (StateChangeResult, error)
 	ContractStatus(context.Context) ContractStatus
 }
