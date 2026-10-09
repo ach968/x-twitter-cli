@@ -140,13 +140,35 @@ Then authenticate:
 twt auth login
 ```
 
-Authentication uses a dedicated Chromium profile owned by `twt`, not the
-user's everyday browser profile. The command first checks that profile
-headlessly. If X requires a login or interactive challenge, it opens a headed
-Chromium window for the user to complete the flow. Once authenticated, it
-captures the current Search, Bookmarks, and View request contracts, verifies that
-the four read operations work, and activates the new local state only
-after validation succeeds.
+Authentication opens managed Chromium in a visible window for manual login.
+Use `--headed` to select the default explicitly, or `--headless` to enter your
+username, password, and supported verification codes through terminal prompts.
+Passwords and codes are hidden during terminal entry and are never saved.
+Credentials are not accepted through command flags or environment variables:
+
+```bash
+twt auth login --headless
+twt auth login --headed
+```
+
+Use a username or email for the initial headless prompt. X's separate phone
+login route is not automated. If X temporarily limits login attempts, the CLI
+reports `AUTH_RATE_LIMITED`; try again later.
+
+Both modes use one Chromium instance and the same dedicated application
+profile throughout login and contract capture. The selected mode remains in
+effect for the entire command. After authentication, `twt` captures the current
+Search, Bookmarks, and View request contracts and saves the captured
+authentication. It verifies that the four read operations work before replacing
+the active operation contracts. If validation fails, the previous active
+contracts remain and the newly captured authentication is already saved.
+
+Headless login supports terminal prompts for identity, password, and
+verification codes. CAPTCHA, security-key, and other unsupported challenges
+return an actionable failure; rerun `twt auth login --headed` to complete them
+in the visible browser. Real-account password and MFA success have not yet
+been verified against live X. The [login investigation](.scratch/headless-auth/diagnosis.md)
+records the evidence behind using X's own web login in both modes.
 
 By default, sensitive and generated state is stored at:
 
@@ -176,8 +198,10 @@ and then rerun the original command:
 twt contract refresh
 ```
 
-Refresh follows the same headless-first authentication behavior. Data commands
-never refresh contracts, open Chromium, log in, or retry themselves.
+Refresh uses the existing application profile headlessly. If X requires login,
+it returns an authentication failure directing you to `twt auth login`; it
+does not open a visible browser automatically. Data commands never refresh
+contracts, open Chromium, log in, or retry themselves.
 
 ## Command documentation
 

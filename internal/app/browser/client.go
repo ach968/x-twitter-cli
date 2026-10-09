@@ -3,6 +3,7 @@ package browser
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -73,6 +74,17 @@ func newBrowserClient(profilePath string, headless bool, timeout time.Duration) 
 		return nil, err
 	}
 	page, err := launched.browser.Page(proto.TargetCreateTarget{URL: "about:blank"})
+	if err != nil {
+		_ = launched.Close()
+		_ = release()
+		return nil, err
+	}
+	// Use the installed browser's normal user agent in both display modes.
+	// X rejects the HeadlessChrome product name before rendering the login page.
+	version, err := launched.browser.Version()
+	if err == nil {
+		err = page.SetUserAgent(&proto.NetworkSetUserAgentOverride{UserAgent: strings.ReplaceAll(version.UserAgent, "HeadlessChrome/", "Chrome/"), AcceptLanguage: "en-US,en;q=0.9"})
+	}
 	if err != nil {
 		_ = launched.Close()
 		_ = release()

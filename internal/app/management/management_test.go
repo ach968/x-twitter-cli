@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	app "github.com/ach968/x-twitter-cli/internal/app"
 	"github.com/ach968/x-twitter-cli/internal/app/browser"
@@ -96,7 +97,7 @@ func TestLoginCapturesPersistsAndActivatesState(t *testing.T) {
 	options := serviceOptions(paths)
 	options.Capture = func(options browser.ContractCaptureOptions) (app.CapturedState, error) {
 		captureCalls++
-		if !options.Headless || options.ProfilePath != paths.ProfilePath {
+		if !options.Headless || !options.Login || options.ProfilePath != paths.ProfilePath || options.Context == nil || options.Timeout != time.Minute {
 			t.Fatalf("capture options = %#v", options)
 		}
 		if len(options.Steps) != 2 || options.Steps[1].URL != "https://x.com/i/bookmarks" || !options.Steps[1].TriggerBookmarkSearch {
@@ -109,7 +110,7 @@ func TestLoginCapturesPersistsAndActivatesState(t *testing.T) {
 	}
 	service := management.New(options)
 
-	result, err := service.Login(context.Background(), func(management.BrowserSetupPrompt) (bool, error) { return true, nil })
+	result, err := service.Login(context.Background(), func(management.BrowserSetupPrompt) (bool, error) { return true, nil }, management.LoginOptions{Headless: true})
 	if err != nil || result.Status != "authenticated" || result.AuthenticationPath != paths.AuthenticationPath || result.ContractPath != paths.ActiveContractPath {
 		t.Fatalf("result=%#v err=%v", result, err)
 	}
@@ -130,38 +131,59 @@ func TestLoginCapturesPersistsAndActivatesState(t *testing.T) {
 	}
 }
 
-func TestLoginUsesHeadedBrowserOnlyWhenAuthenticationIsRequired(t *testing.T) {
-	paths := testPaths(t)
-	options := serviceOptions(paths)
-	var headlessValues []bool
-	options.Capture = func(input browser.ContractCaptureOptions) (app.CapturedState, error) {
-		headlessValues = append(headlessValues, input.Headless)
-		if input.Headless {
-			return app.CapturedState{}, &browser.AuthenticationRequiredError{URL: "https://x.com/i/flow/login"}
-		}
-		return capturedState(), nil
+func TestLoginUsesSelectedBrowserOnce(t *testing.T) {
+	for _, headless := range []bool{true, false} {
+		t.Run(map[bool]string{true: "headless", false: "headed"}[headless], func(t *testing.T) {
+			options := serviceOptions(testPaths(t))
+			ctx := context.WithValue(context.Background(), struct{}{}, "test")
+			captureCalls := 0
+			promptCalls := 0
+			prompt := func(browser.LoginPrompt) (string, error) { promptCalls++; return "user", nil }
+			options.Capture = func(input browser.ContractCaptureOptions) (app.CapturedState, error) {
+				captureCalls++
+				if input.Headless != headless || !input.Login || input.Context != ctx {
+					t.Fatalf("capture options=%#v", input)
+				}
+				if value, err := input.LoginPrompt(browser.LoginPrompt{Label: "Username: "}); err != nil || value != "user" {
+					t.Fatalf("prompt value=%q error=%v", value, err)
+				}
+				return capturedState(), nil
+			}
+			result, err := management.New(options).Login(ctx, func(management.BrowserSetupPrompt) (bool, error) { return true, nil }, management.LoginOptions{Headless: headless, Prompt: prompt})
+			if err != nil || result.Status != "authenticated" || captureCalls != 1 || promptCalls != 1 {
+				t.Fatalf("result=%#v err=%v captures=%d prompts=%d", result, err, captureCalls, promptCalls)
+			}
+		})
 	}
-	service := management.New(options)
-	result, err := service.Login(context.Background(), func(management.BrowserSetupPrompt) (bool, error) { return true, nil })
-	if err != nil || result.Status != "authenticated" {
-		t.Fatalf("result=%#v err=%v", result, err)
-	}
-	if len(headlessValues) != 2 || !headlessValues[0] || headlessValues[1] {
-		t.Fatalf("headless sequence=%v", headlessValues)
-	}
+}
 
-	unknownFailure := errors.New("capture transport failed")
-	headlessValues = nil
-	options.Capture = func(input browser.ContractCaptureOptions) (app.CapturedState, error) {
-		headlessValues = append(headlessValues, input.Headless)
-		return app.CapturedState{}, unknownFailure
-	}
-	service = management.New(options)
-	if _, err := service.Login(context.Background(), func(management.BrowserSetupPrompt) (bool, error) { return true, nil }); !errors.Is(err, unknownFailure) {
-		t.Fatalf("error=%v", err)
-	}
-	if len(headlessValues) != 1 || !headlessValues[0] {
-		t.Fatalf("unknown failure unexpectedly opened headed browser: %v", headlessValues)
+func TestLoginFailureDoesNotChangeBrowserModeOrStoredState(t *testing.T) {
+	for _, failure := range []error{errors.New("capture transport failed"), &browser.AuthenticationRequiredError{URL: "https://x.com/i/flow/login"}} {
+		paths := testPaths(t)
+		if err := state.SaveCaptured(paths.ActiveContractPath, paths.AuthenticationPath, capturedState()); err != nil {
+			t.Fatal(err)
+		}
+		before, err := os.ReadFile(paths.AuthenticationPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		options := serviceOptions(paths)
+		captureCalls := 0
+		options.Capture = func(input browser.ContractCaptureOptions) (app.CapturedState, error) {
+			captureCalls++
+			if !input.Headless {
+				t.Fatal("failure opened a headed browser")
+			}
+			return app.CapturedState{}, failure
+		}
+		_, err = management.New(options).Login(context.Background(), func(management.BrowserSetupPrompt) (bool, error) { return true, nil }, management.LoginOptions{Headless: true})
+		if err == nil || captureCalls != 1 {
+			t.Fatalf("error=%v captures=%d", err, captureCalls)
+		}
+		after, err := os.ReadFile(paths.AuthenticationPath)
+		if err != nil || string(after) != string(before) {
+			t.Fatal("failed login changed authentication")
+		}
 	}
 }
 
@@ -191,38 +213,23 @@ func TestSetupReportsManagedChromiumOutcome(t *testing.T) {
 	}
 }
 
-func TestContractRefreshUsesHeadedBrowserOnlyWhenAuthenticationIsRequired(t *testing.T) {
-	paths := testPaths(t)
-	options := serviceOptions(paths)
-	var headlessValues []bool
+func TestContractRefreshRequiresExplicitLoginAndNeverFallsBack(t *testing.T) {
+	options := serviceOptions(testPaths(t))
+	captureCalls := 0
 	options.Capture = func(input browser.ContractCaptureOptions) (app.CapturedState, error) {
-		headlessValues = append(headlessValues, input.Headless)
-		if input.Headless {
-			return app.CapturedState{}, &browser.AuthenticationRequiredError{URL: "https://x.com/i/flow/login"}
+		captureCalls++
+		if !input.Headless || input.Login || input.LoginPrompt != nil {
+			t.Fatalf("refresh login options=%#v", input)
 		}
-		return capturedState(), nil
+		return app.CapturedState{}, &browser.AuthenticationRequiredError{URL: "https://x.com/i/flow/login"}
 	}
-	service := management.New(options)
-	result, err := service.RefreshContracts(context.Background())
-	if err != nil || result.Status != "refreshed" || result.ContractPath != paths.ActiveContractPath {
-		t.Fatalf("result=%#v err=%v", result, err)
-	}
-	if len(headlessValues) != 2 || !headlessValues[0] || headlessValues[1] {
-		t.Fatalf("headless sequence=%v", headlessValues)
-	}
-
-	unknownFailure := errors.New("capture transport failed")
-	headlessValues = nil
-	options.Capture = func(input browser.ContractCaptureOptions) (app.CapturedState, error) {
-		headlessValues = append(headlessValues, input.Headless)
-		return app.CapturedState{}, unknownFailure
-	}
-	service = management.New(options)
-	if _, err := service.RefreshContracts(context.Background()); !errors.Is(err, unknownFailure) {
+	_, err := management.New(options).RefreshContracts(context.Background())
+	var failure *app.OperationFailure
+	if !errors.As(err, &failure) || failure.Code != "AUTHENTICATION_REQUIRED" || failure.RecoveryCommand != "twt auth login" {
 		t.Fatalf("error=%v", err)
 	}
-	if len(headlessValues) != 1 || !headlessValues[0] {
-		t.Fatalf("unknown failure unexpectedly opened headed browser: %v", headlessValues)
+	if captureCalls != 1 {
+		t.Fatalf("capture calls=%d", captureCalls)
 	}
 }
 

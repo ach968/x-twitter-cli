@@ -126,13 +126,39 @@ revisions is offered separately and defaults to no.
 ## Authentication
 
 ```text
-twt auth login
+twt auth login [--headless | --headed]
 ```
 
-Checks the isolated application profile headlessly and opens managed Chromium
-only when X requires interactive login or a challenge. After authentication,
-the command captures and validates the Search, Bookmarks, and View contracts before
-activating the new local authentication and contract state.
+`login` defaults to a visible managed Chromium window for manual login. It
+reuses the isolated application profile. `--headless` uses terminal prompts
+when X requests an identity, password, or supported verification code. Passwords and verification codes are
+hidden during terminal entry and are never saved or included in command
+output. Account credentials are not accepted through flags or environment
+variables. An already authenticated profile proceeds directly to contract
+capture.
+
+The current initial form accepts a username or email. X's separate phone-login
+route is not automated. `AUTH_RATE_LIMITED` means X temporarily limited login
+attempts; try later. `AUTH_LOGIN_UNAVAILABLE` reports an X login-page error.
+Neither failure implies that changing browser display mode will resolve it.
+
+`--headed` selects the default visible-browser mode explicitly. The flags are mutually exclusive. Both modes use one
+browser instance and the same profile for login and capture; the command does
+not switch modes or relaunch Chromium after authentication.
+
+After authentication, the command captures the Search, Bookmarks, and View
+contracts, saves the captured authentication and candidate contracts, then
+validates the four read operations. Only successful validation replaces the
+active contracts. Successful output reports `status: "authenticated"`,
+`authentication_path`, and `contract_path`.
+
+CAPTCHA, security-key, and other unsupported headless challenges return an
+actionable failure suggesting `twt auth login --headed`. A failure before
+capture leaves the saved authentication and active contract files unchanged.
+If contract validation fails, the previous active contracts remain, but the
+newly captured authentication has already been saved.
+Real-account password and MFA success have not yet been verified against live
+X; see the [login investigation](../.scratch/headless-auth/diagnosis.md).
 
 ## Contract maintenance
 
@@ -144,10 +170,11 @@ twt contract refresh
 `status` validates the local authentication and contract files without opening
 Chromium or contacting X. It does not prove that X will still accept them.
 
-`refresh` explicitly recaptures and validates current operation contracts. It
-uses the existing application profile headlessly when possible and opens
-Chromium only if X requires interactive authentication. Data commands never
-refresh contracts or retry themselves.
+`refresh` explicitly recaptures and validates current operation contracts using
+the existing application profile headlessly. If X requires login, it returns
+an authentication failure directing you to `twt auth login`. Refresh never
+switches to a visible browser. Data commands never refresh contracts or retry
+themselves.
 
 ## Output, warnings, and failures
 

@@ -35,7 +35,7 @@ func (service *controlledManagement) Setup(context.Context, management.ConfirmBr
 	return management.SetupResult{Status: "ready", ExecutablePath: "/managed/chromium"}, nil
 }
 
-func (service *controlledManagement) Login(context.Context, management.ConfirmBrowserSetup) (management.StateChangeResult, error) {
+func (service *controlledManagement) Login(context.Context, management.ConfirmBrowserSetup, management.LoginOptions) (management.StateChangeResult, error) {
 	service.calls = append(service.calls, "auth login")
 	return management.StateChangeResult{Status: "authenticated", AuthenticationPath: "/config/authentication.json", ContractPath: "/config/contracts.json"}, nil
 }
